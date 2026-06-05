@@ -144,8 +144,20 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 .index-letter-group{margin-bottom:16px}
 .letter-head{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--red-b);letter-spacing:2px;margin-bottom:6px;border-left:3px solid var(--red);padding-left:8px}
 .index-links{display:flex;flex-wrap:wrap;gap:6px}
-.index-link{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:4px 10px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}
+
+.index-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.index-toolbar-title{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:3px;flex:1}
+.btn-select{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;cursor:pointer;transition:border-color .15s,color .15s}
+.btn-select:hover{border-color:var(--amber);color:var(--amber)}
+.btn-select.active{border-color:var(--amber);color:var(--amber);background:#2a1a00}
+.btn-delete-sel{background:var(--red);border:none;border-radius:4px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:6px 14px;cursor:pointer;display:none;transition:background .15s}
+.btn-delete-sel:hover{background:var(--red-b)}
+.sel-count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber);display:none}
+.index-link{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:4px 10px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;user-select:none}
 .index-link:hover{background:var(--bg3);border-color:var(--red);color:var(--red-b)}
+.index-link.selected{background:#2a0a0a;border-color:var(--red);color:var(--white)}
+.index-link.sel-mode:hover{border-color:var(--amber);color:var(--amber)}
+
 .gloss-entry{border-bottom:1px solid var(--border);padding:12px 0}
 .gloss-term{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--red-b);margin-bottom:4px}
 .gloss-def{font-size:13px;color:#bbb}
@@ -283,7 +295,12 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 <div id="articleView" class="container"></div>
 
 <div id="indexView" class="container">
-  <div class="index-header">INDICE GENERAL</div>
+  <div class="index-toolbar">
+    <div class="index-toolbar-title">INDICE GENERAL</div>
+    <span class="sel-count" id="selCount">0 seleccionados</span>
+    <button class="btn-delete-sel" id="btnDeleteSel" onclick="deleteSelected()">&#128465; Eliminar seleccionados</button>
+    <button class="btn-select" id="btnSelect" onclick="toggleSelectMode()">Seleccionar</button>
+  </div>
   <div id="indexContent"></div>
   <div class="spacer"></div>
 </div>
@@ -388,7 +405,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 // ══════════════════════════════════════════════
 // CONFIGURACION — reemplaza con tus valores
 // ══════════════════════════════════════════════
-var SUPABASE_URL = 'https://yqjvneovdolqehiiboga.supabase.co';
+var var SUPABASE_URL = 'https://yqjvneovdolqehiiboga.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_Z8XQaXlfdTR0Th_N07Vvyw_xn5x1iC-';
 // ══════════════════════════════════════════════
 
@@ -810,16 +827,78 @@ async function doImport(){
 }
 
 // ══ INDEX ══
+var selectionMode = false;
+var selectedIds = {};
+
+function toggleSelectMode(){
+  if(!isAdmin()){ showToast('Solo el admin puede usar esta funcion'); return; }
+  selectionMode = !selectionMode;
+  selectedIds = {};
+  var btn = document.getElementById('btnSelect');
+  var btnDel = document.getElementById('btnDeleteSel');
+  var selCount = document.getElementById('selCount');
+  if(selectionMode){
+    btn.textContent = 'Cancelar';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = 'Seleccionar';
+    btn.classList.remove('active');
+    btnDel.style.display = 'none';
+    selCount.style.display = 'none';
+  }
+  renderIndex();
+}
+
+function toggleArticleSelect(id, el){
+  if(selectedIds[id]){ delete selectedIds[id]; el.classList.remove('selected'); }
+  else { selectedIds[id]=true; el.classList.add('selected'); }
+  var count = Object.keys(selectedIds).length;
+  var btnDel = document.getElementById('btnDeleteSel');
+  var selCount = document.getElementById('selCount');
+  selCount.textContent = count + ' seleccionado' + (count!==1?'s':'');
+  selCount.style.display = count > 0 ? 'inline' : 'none';
+  btnDel.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+async function deleteSelected(){
+  var ids = Object.keys(selectedIds);
+  if(!ids.length){ showToast('No hay articulos seleccionados'); return; }
+  var btn = document.getElementById('btnDeleteSel');
+  btn.disabled = true;
+  btn.textContent = 'Eliminando...';
+  var res = await sb.from('articles').delete().in('id', ids);
+  btn.disabled = false;
+  if(res.error){ showToast('Error al eliminar: '+res.error.message); btn.textContent='Eliminar seleccionados'; return; }
+  await loadArticles();
+  selectionMode = false;
+  selectedIds = {};
+  document.getElementById('btnSelect').textContent = 'Seleccionar';
+  document.getElementById('btnSelect').classList.remove('active');
+  document.getElementById('btnDeleteSel').style.display = 'none';
+  document.getElementById('selCount').style.display = 'none';
+  showToast(ids.length + ' articulo' + (ids.length!==1?'s':'') + ' eliminado' + (ids.length!==1?'s':''));
+  renderIndex();
+}
+
 function renderIndex(){
   var arts = articlesCache;
   var byL = {};
   arts.forEach(function(a){ var l=a.title[0].toUpperCase(); if(!byL[l])byL[l]=[]; byL[l].push(a); });
+  var showSelect = selectionMode && isAdmin();
   document.getElementById('indexContent').innerHTML = Object.keys(byL).sort().map(function(l){
     return '<div class="index-letter-group"><div class="letter-head">'+l+'</div><div class="index-links">'
       +byL[l].map(function(a){
-        return '<span class="index-link" onclick="showArticle(\''+a.id+'\')">'+(a.verified?'&#10003; ':'&#128336; ')+a.title+'</span>';
+        var sel = selectedIds[a.id] ? ' selected' : '';
+        var selClass = showSelect ? ' sel-mode' : '';
+        var onclick = showSelect
+          ? 'toggleArticleSelect(\''+a.id+'\', this)'
+          : 'showArticle(\''+a.id+'\')';
+        return '<span class="index-link'+sel+selClass+'" onclick="'+onclick+'">'+(a.verified?'&#10003; ':'&#128336; ')+a.title+'</span>';
       }).join('')+'</div></div>';
   }).join('');
+  // Show/hide select button based on role
+  var btnSelect = document.getElementById('btnSelect');
+  if(btnSelect) btnSelect.style.display = isAdmin() ? 'inline-block' : 'none';
 }
 
 // ══ GLOSSARY ══
