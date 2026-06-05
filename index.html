@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RockaWiki</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--border:#2a2a2a;--red:#cc2200;--red-b:#ff3311;--red-d:#661100;--white:#f0ede8;--grey:#888;--grey2:#555;--green:#22aa55;--amber:#cc8800}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;min-height:100vh}
+#loginScreen{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:24px}
+.login-logo{font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:6px;margin-bottom:2px}
+.login-logo span{color:var(--red-b)}
+.login-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--grey);letter-spacing:3px;text-transform:uppercase;margin-bottom:32px}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-top:2px solid var(--red);border-radius:6px;padding:24px;width:100%;max-width:320px;position:relative}
+.login-box h2{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;margin-bottom:20px;color:var(--grey)}
+.close-btn{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--grey);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px}
+.close-btn:hover{color:var(--white)}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:6px}
+.field input,.field select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--red)}
+.field select option{background:var(--bg3)}
+.btn-primary{width:100%;background:var(--red);color:var(--white);border:none;border-radius:4px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:background .15s;margin-top:4px}
+.btn-primary:hover{background:var(--red-b)}
+.btn-primary:disabled{background:var(--grey2);cursor:not-allowed}
+.login-toggle{margin-top:12px;text-align:center;font-size:12px;color:var(--grey)}
+.login-toggle a{color:var(--red);cursor:pointer}
+.login-error{background:#2a0a0a;border:1px solid var(--red-d);border-radius:4px;padding:8px 12px;font-size:12px;color:#ff8877;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;display:none}
+header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;height:52px}
+.logo{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:3px;cursor:pointer;flex-shrink:0}
+.logo span{color:var(--red-b)}
+.search-wrap{flex:1;display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0 10px;transition:border-color .2s}
+.search-wrap:focus-within{border-color:var(--red)}
+.search-wrap svg{color:var(--grey);flex-shrink:0}
+#searchInput{background:none;border:none;outline:none;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;width:100%;padding:8px}
+#searchInput::placeholder{color:var(--grey2)}
+.staff-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);font-size:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.staff-btn:hover{border-color:var(--red);color:var(--red-b)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--red-d);border:1px solid var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;flex-shrink:0;position:relative;display:none}
+.user-menu{position:absolute;top:38px;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:4px;min-width:190px;z-index:200;display:none;overflow:hidden}
+.user-menu.open{display:block}
+.user-menu-header{padding:10px 12px;border-bottom:1px solid var(--border)}
+.user-menu-name{font-weight:600;font-size:13px}
+.user-menu-role{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.role-admin{color:var(--red-b)}.role-editor{color:#4499ff}.role-reviewer{color:var(--amber)}
+.user-menu-item{padding:10px 12px;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px}
+.user-menu-item:hover{background:var(--bg3)}
+.user-menu-item.danger{color:#ff6655}
+.container{max-width:860px;margin:0 auto;padding:0 16px}
+#searchResults{display:none;padding:16px 16px 24px;max-width:860px;margin:0 auto}
+#searchResults h2{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;color:var(--grey);margin-bottom:12px}
+#searchResults h2 span{color:var(--white)}
+.search-result-item{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.search-result-item:hover{background:var(--bg3)}
+.res-title{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500}
+.res-section{font-size:12px;color:var(--grey);margin-top:2px}
+.res-excerpt{font-size:13px;color:#bbb;margin-top:6px;line-height:1.5}
+.res-excerpt mark{background:var(--red-d);color:var(--white);border-radius:2px;padding:0 2px}
+.no-results{color:var(--grey);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:16px 0}
+#homeView{padding-top:20px}
+.home-hero{background:var(--bg2);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:4px;padding:20px;margin-bottom:20px}
+.home-hero h1{font-family:'Bebas Neue',cursive;font-size:40px;letter-spacing:4px;line-height:1;margin-bottom:6px}
+.home-hero h1 span{color:var(--red-b)}
+.home-hero p{color:#aaa;font-size:13px;font-family:'IBM Plex Mono',monospace}
+.stats-row{display:flex;gap:10px;margin-bottom:20px}
+.stat{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
+.stat .num{font-family:'Bebas Neue',cursive;font-size:28px;color:var(--red-b);line-height:1}
+.stat .lbl{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px;cursor:pointer;transition:border-color .15s,background .15s}
+.section-card:hover{border-color:var(--red);background:var(--bg3)}
+.sc-icon{font-size:22px;margin-bottom:6px}
+.sc-title{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;margin-bottom:4px}
+.sc-count{font-size:12px;color:var(--grey)}
+.recent-list{margin-bottom:16px}
+.recent-list h2{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--grey);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:10px}
+.recent-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.recent-item:hover .ri-title{color:var(--red-b)}
+.ri-dot{width:6px;height:6px;background:var(--red);border-radius:50%;flex-shrink:0}
+.ri-title{font-size:14px;flex:1;transition:color .15s}
+.ri-section{font-size:12px;color:var(--grey)}
+.badge-verified{display:inline-flex;align-items:center;gap:4px;background:#0a2a15;border:1px solid var(--green);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px}
+.badge-pending{display:inline-flex;align-items:center;gap:4px;background:#2a2000;border:1px solid var(--amber);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:1px}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--red);color:var(--white);border:none;border-radius:4px;padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;margin:8px 0;width:100%;transition:background .15s;text-transform:uppercase;letter-spacing:1px}
+.add-btn:hover{background:var(--red-b)}
+.export-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:none;color:var(--grey);border:1px solid var(--border);border-radius:4px;padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;margin-bottom:16px;width:100%;transition:border-color .15s,color .15s;text-transform:uppercase;letter-spacing:1px}
+.export-btn:hover{border-color:var(--red);color:var(--white)}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);color:var(--white);border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:border-color .15s;text-transform:uppercase;letter-spacing:1px}
+.btn-secondary:hover{border-color:var(--red);color:var(--red)}
+.btn-verify{display:inline-flex;align-items:center;gap:6px;background:#0a2a15;color:var(--green);border:1px solid var(--green);border-radius:4px;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:background .15s;text-transform:uppercase;letter-spacing:1px}
+.btn-verify:hover{background:#143d22}
+#articleView{padding-top:20px;display:none}
+.breadcrumb{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--grey);margin-bottom:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.breadcrumb a{color:var(--red);cursor:pointer}
+.breadcrumb span{color:var(--grey2)}
+.article-title{font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:2px;line-height:1.1;margin-bottom:8px}
+.article-meta-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.article-meta-text{font-size:12px;color:var(--grey);font-family:'IBM Plex Mono',monospace}
+.article-meta-text span{color:var(--red)}
+.article-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.toc{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:14px;margin-bottom:20px}
+.toc-title{font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--grey);margin-bottom:10px}
+.toc ol{padding-left:20px}
+.toc li{margin-bottom:4px}
+.toc a{color:var(--red);font-size:13px;cursor:pointer;text-decoration:none}
+.toc a:hover{color:var(--red-b);text-decoration:underline}
+.article-content h2{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:2px;border-bottom:1px solid var(--border);padding-bottom:4px;margin:24px 0 12px;scroll-margin-top:70px}
+.article-content h3{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:var(--red-b);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.article-content p{margin-bottom:12px;color:#ccc;font-size:14px}
+.article-content ul,.article-content ol{padding-left:20px;margin-bottom:14px;color:#ccc;font-size:14px}
+.article-content li{margin-bottom:4px}
+.article-content strong{color:var(--white);font-weight:600}
+.wiki-link{color:var(--red);text-decoration:none;border-bottom:1px dotted var(--red-d);cursor:pointer}
+.wiki-link:hover{color:var(--red-b)}
+.callout{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:12px 14px;margin:14px 0;font-size:14px;color:#bbb}
+.callout strong{color:var(--red-b)}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border)}
+.tag{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:3px 8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--grey);cursor:pointer}
+.tag:hover{border-color:var(--red);color:var(--red)}
+.related-articles{margin-top:20px;padding-top:14px;border-top:1px solid var(--border)}
+.related-title{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--grey);margin-bottom:10px}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.related-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:border-color .15s}
+.related-card:hover{border-color:var(--red)}
+.rc-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.rc-section{font-size:11px;color:var(--grey)}
+#indexView{padding-top:20px;display:none}
+#glossaryView{padding-top:20px;display:none}
+.index-header{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:3px;border-bottom:2px solid var(--red);padding-bottom:8px;margin-bottom:16px}
+.index-letter-group{margin-bottom:16px}
+.letter-head{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--red-b);letter-spacing:2px;margin-bottom:6px;border-left:3px solid var(--red);padding-left:8px}
+.index-links{display:flex;flex-wrap:wrap;gap:6px}
+.index-link{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:4px 10px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}
+.index-link:hover{background:var(--bg3);border-color:var(--red);color:var(--red-b)}
+.gloss-entry{border-bottom:1px solid var(--border);padding:12px 0}
+.gloss-term{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--red-b);margin-bottom:4px}
+.gloss-def{font-size:13px;color:#bbb}
+#editorView{padding-top:20px;display:none}
+.editor-header{font-family:'Bebas Neue',cursive;font-size:28px;letter-spacing:3px;border-bottom:2px solid var(--red);padding-bottom:8px;margin-bottom:20px}
+.editor-form{display:flex;flex-direction:column;gap:14px}
+.editor-form label{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);display:block;margin-bottom:5px}
+.editor-form input[type=text],.editor-form select,.editor-form textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s}
+.editor-form input[type=text]:focus,.editor-form select:focus,.editor-form textarea:focus{border-color:var(--red)}
+.editor-form textarea{min-height:260px;resize:vertical;line-height:1.6}
+.editor-form select option{background:var(--bg3)}
+.editor-hint{font-size:12px;color:var(--grey2);font-family:'IBM Plex Mono',monospace;margin-top:4px;line-height:1.6}
+.editor-actions{display:flex;gap:10px;margin-top:8px}
+.btn-save{flex:1;background:var(--red);color:var(--white);border:none;border-radius:4px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:background .15s}
+.btn-save:hover{background:var(--red-b)}
+.btn-save:disabled{background:var(--grey2);cursor:not-allowed}
+.btn-cancel{background:var(--bg3);color:var(--grey);border:1px solid var(--border);border-radius:4px;padding:12px 20px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;transition:border-color .15s}
+.btn-cancel:hover{border-color:var(--red);color:var(--white)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;height:54px;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:color .15s;color:var(--grey);font-size:10px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.5px;border:none;background:none;-webkit-tap-highlight-color:transparent}
+.nav-btn svg{width:20px;height:20px}
+.nav-btn.active{color:var(--red-b)}
+.nav-btn:hover{color:var(--white)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-top:2px solid var(--green);border-radius:6px;padding:24px;width:100%;max-width:340px}
+.modal h3{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;margin-bottom:8px}
+.modal p{font-size:13px;color:#aaa;margin-bottom:20px}
+.modal-actions{display:flex;gap:10px}
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px}
+.loading-logo{font-family:'Bebas Neue',cursive;font-size:52px;letter-spacing:6px}
+.loading-logo span{color:var(--red-b)}
+.loading-bar{width:200px;height:2px;background:var(--border);border-radius:2px;overflow:hidden}
+.loading-bar-inner{height:100%;background:var(--red);border-radius:2px;animation:loadbar 1.2s ease-in-out infinite}
+@keyframes loadbar{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+.loading-text{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--grey);letter-spacing:2px;text-transform:uppercase}
+.config-warning{background:#1a1000;border:1px solid var(--amber);border-radius:6px;padding:16px;margin:16px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--amber);line-height:1.8;display:none}
+.config-warning strong{color:var(--white);display:block;margin-bottom:8px;font-size:15px}
+.spacer{height:70px}
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--green);border-radius:4px;padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--green);z-index:600;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-logo">ROCKA<span>WIKI</span></div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  <div class="loading-text">Cargando...</div>
+</div>
+
+<!-- CONFIG WARNING (shown if Supabase not configured) -->
+<div class="config-warning" id="configWarning">
+  <strong>⚠️ Configuración necesaria</strong>
+  Abre el archivo <code>index.html</code> y reemplaza en la línea de configuración:<br><br>
+  <code>SUPABASE_URL</code> → tu URL de Supabase<br>
+  <code>SUPABASE_ANON_KEY</code> → tu clave anon de Supabase<br><br>
+  Encontrarás estos valores en: Supabase → Tu proyecto → Settings → API
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="loginScreen">
+  <div class="login-logo">ROCKA<span>WIKI</span></div>
+  <div class="login-sub">Acceso staff</div>
+  <div class="login-box" id="loginForm">
+    <button class="close-btn" onclick="hideLoginModal()">&#10005;</button>
+    <h2>Identificarse</h2>
+    <div class="login-error" id="loginError"></div>
+    <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+<header>
+  <div class="logo" onclick="showHome()">ROCKA<span>WIKI</span></div>
+  <div class="search-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="searchInput" placeholder="Buscar en el manual..." oninput="doSearch(this.value)" autocomplete="off">
+  </div>
+  <button class="staff-btn" id="staffLoginBtn" onclick="showLoginModal()" title="Acceso staff">&#128274;</button>
+  <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">
+    <span id="userInitials">?</span>
+    <div class="user-menu" id="userMenu">
+      <div class="user-menu-header">
+        <div class="user-menu-name" id="menuName"></div>
+        <div class="user-menu-role" id="menuRole"></div>
+      </div>
+      <div class="user-menu-item" onclick="showHome()">&#127968; Inicio</div>
+      <div class="user-menu-item" onclick="exportMap()">&#128196; Exportar mapa</div>
+      <div class="user-menu-item danger" onclick="doLogout()">&#10229; Cerrar sesión</div>
+    </div>
+  </div>
+</header>
+
+<div id="searchResults" class="container"></div>
+
+<div id="homeView" class="container">
+  <div class="home-hero">
+    <h1>ROCKA<span>WIKI</span></h1>
+    <p>Manual interno &middot; Protocolo &middot; Operaciones &middot; Equipo</p>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><div class="num" id="statArticles">—</div><div class="lbl">Artículos</div></div>
+    <div class="stat"><div class="num">6</div><div class="lbl">Secciones</div></div>
+    <div class="stat"><div class="num" id="statVerified">—</div><div class="lbl">Verificados</div></div>
+  </div>
+  <div class="section-grid">
+    <div class="section-card" onclick="filterSection('Apertura y Cierre')"><div class="sc-icon">&#128273;</div><div class="sc-title">Apertura &amp; Cierre</div><div class="sc-count" id="cnt0"></div></div>
+    <div class="section-card" onclick="filterSection('Atencion al Cliente')"><div class="sc-icon">&#129309;</div><div class="sc-title">Atención al Cliente</div><div class="sc-count" id="cnt1"></div></div>
+    <div class="section-card" onclick="filterSection('Cocina y Protocolo')"><div class="sc-icon">&#127859;</div><div class="sc-title">Cocina &amp; Protocolo</div><div class="sc-count" id="cnt2"></div></div>
+    <div class="section-card" onclick="filterSection('Higiene y Seguridad')"><div class="sc-icon">&#129528;</div><div class="sc-title">Higiene &amp; Seguridad</div><div class="sc-count" id="cnt3"></div></div>
+    <div class="section-card" onclick="filterSection('Gestion de Personal')"><div class="sc-icon">&#128101;</div><div class="sc-title">Gestión de Personal</div><div class="sc-count" id="cnt4"></div></div>
+    <div class="section-card" onclick="filterSection('Emergencias')"><div class="sc-icon">&#128680;</div><div class="sc-title">Emergencias</div><div class="sc-count" id="cnt5"></div></div>
+  </div>
+  <div class="recent-list">
+    <h2>ARTÍCULOS RECIENTES</h2>
+    <div id="recentList"><div style="color:var(--grey);font-size:13px;padding:12px 0">Cargando...</div></div>
+  </div>
+  <div id="addBtnWrap"></div>
+  <button class="export-btn" onclick="exportMap()">&#128196; Exportar mapa de contenidos</button>
+  <div class="spacer"></div>
+</div>
+
+<div id="articleView" class="container"></div>
+
+<div id="indexView" class="container">
+  <div class="index-header">ÍNDICE GENERAL</div>
+  <div id="indexContent"></div>
+  <div class="spacer"></div>
+</div>
+
+<div id="glossaryView" class="container">
+  <div class="index-header">GLOSARIO</div>
+  <div id="glossaryContent"></div>
+  <div class="spacer"></div>
+</div>
+
+<div id="editorView" class="container">
+  <div class="editor-header" id="editorTitle">NUEVA PÁGINA</div>
+  <div class="editor-form">
+    <input type="hidden" id="editId">
+    <div><label>Título del artículo</label><input type="text" id="editTitle" placeholder="Ej: Protocolo de Cierre del Local"></div>
+    <div><label>Sección</label>
+      <select id="editSection">
+        <option>Apertura y Cierre</option>
+        <option>Atencion al Cliente</option>
+        <option>Cocina y Protocolo</option>
+        <option>Higiene y Seguridad</option>
+        <option>Gestion de Personal</option>
+        <option>Emergencias</option>
+      </select>
+    </div>
+    <div><label>Etiquetas (separadas por comas)</label><input type="text" id="editTags" placeholder="ej: apertura, manager, checklist"></div>
+    <div>
+      <label>Contenido (HTML)</label>
+      <textarea id="editBody" placeholder="Escribe el contenido en HTML..."></textarea>
+      <div class="editor-hint">
+        Usa: &lt;h2 id="seccion"&gt;Título&lt;/h2&gt; · &lt;p&gt;párrafo&lt;/p&gt; · &lt;ul&gt;&lt;li&gt;item&lt;/li&gt;&lt;/ul&gt;<br>
+        &lt;strong&gt;negrita&lt;/strong&gt; · &lt;div class="callout"&gt;aviso&lt;/div&gt;<br>
+        Enlace a otro artículo: &lt;a class="wiki-link" onclick="showArticle('id-articulo')"&gt;texto&lt;/a&gt;
+      </div>
+    </div>
+    <div class="editor-actions">
+      <button class="btn-cancel" onclick="cancelEdit()">Cancelar</button>
+      <button class="btn-save" id="saveBtn" onclick="saveArticle()">Guardar artículo</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navHome" onclick="showHome()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio
+  </button>
+  <button class="nav-btn" id="navIndex" onclick="showIndex()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Índice
+  </button>
+  <button class="nav-btn" id="navGloss" onclick="showGlossary()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Glosario
+  </button>
+</nav>
+</div><!-- /app -->
+
+<div class="modal-overlay" id="verifyModal">
+  <div class="modal">
+    <h3>✅ Marcar como revisado</h3>
+    <p>Vas a marcar este artículo como <strong>verificado</strong> por ti. Quedará visible para todo el equipo.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" style="flex:1" onclick="confirmVerify()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="border-top-color:var(--red)">
+    <h3>🗑 Eliminar artículo</h3>
+    <p>Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" style="flex:1;background:var(--red)" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURACIÓN — reemplaza estos dos valores
+// con los de tu proyecto Supabase
+// ══════════════════════════════════════════════
+var SUPABASE_URL = 'https://yqjvneovdolqehiiboga.supabase.co/rest/v1/';
+var SUPABASE_ANON_KEY = 'sb_secret_8Mo6w7e8h3hcyMMs8dhd2g_PijBDulQ';
+// ══════════════════════════════════════════════
+
+var sb = null;
+var currentUser = null;
+var currentProfile = null;
+var currentArticleId = null;
+var pendingVerifyId = null;
+var pendingDeleteId = null;
+var articlesCache = [];
+
+// Usuarios con sus roles (email → rol)
+// Ernesto es admin, los demás son reviewers
+var STAFF_ROLES = {
+  'ernesto@rockawiki.com': 'admin',
+  'gonzalo@rockawiki.com': 'reviewer',
+  'rafa@rockawiki.com': 'reviewer',
+  'charly@rockawiki.com': 'reviewer',
+  'andres@rockawiki.com': 'reviewer'
+};
+
+var STAFF_NAMES = {
+  'ernesto@rockawiki.com': 'Ernesto',
+  'gonzalo@rockawiki.com': 'Gonzalo',
+  'rafa@rockawiki.com': 'Rafa',
+  'charly@rockawiki.com': 'Charly',
+  'andres@rockawiki.com': 'Andrés'
+};
+
+var GLS = [
+  {term:'APPCC',def:'Análisis de Peligros y Puntos Críticos de Control. Sistema obligatorio de autocontrol en seguridad alimentaria.'},
+  {term:'Alérgeno',def:'Sustancia que puede causar reacción alérgica. En restauración, hay 14 de declaración obligatoria según Reglamento UE 1169/2011.'},
+  {term:'Briefing',def:'Reunión breve de equipo antes del servicio para comunicar novedades del día y asignación de tareas.'},
+  {term:'Cámara frigorífica',def:'Espacio refrigerado para conservación de alimentos entre 0 y 4 grados C.'},
+  {term:'Comanda',def:'Registro en el TPV donde se anotan los pedidos de los clientes.'},
+  {term:'Contaminación cruzada',def:'Transferencia de alérgenos o microorganismos entre alimentos por contacto o utensilios compartidos.'},
+  {term:'Fondo de caja',def:'Cantidad de efectivo inicial en caja cada turno para dar cambio. En RockaWiki: 150 euros.'},
+  {term:'Mise en place',def:'Preparación y organización de todos los ingredientes y utensilios antes del servicio.'},
+  {term:'No conformidad',def:'Registro formal de un incidente o desviación de los estándares operativos.'},
+  {term:'TPV',def:'Terminal Punto de Venta. Sistema informático de caja y comandas.'},
+  {term:'Zona de peligro',def:'Rango de temperatura entre 8 y 65 grados C donde los microorganismos se multiplican rápidamente.'}
+];
+
+// ══ PERMISOS ══
+function canEdit(){ return currentProfile && (currentProfile.role==='admin' || currentProfile.role==='editor'); }
+function canVerify(){ return currentProfile && (currentProfile.role==='admin' || currentProfile.role==='reviewer'); }
+function canDelete(){ return currentProfile && currentProfile.role==='admin'; }
+function isLoggedIn(){ return currentProfile !== null; }
+
+// ══ INIT ══
+async function init(){
+  var overlay = document.getElementById('loadingOverlay');
+  var warning = document.getElementById('configWarning');
+
+  if(SUPABASE_URL === 'SUPABASE_URL' || SUPABASE_ANON_KEY === 'SUPABASE_ANON_KEY'){
+    overlay.style.display = 'none';
+    warning.style.display = 'block';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('staffLoginBtn').style.display = 'flex';
+    showHome();
+    return;
+  }
+
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Check existing session
+  var sessionRes = await sb.auth.getSession();
+  if(sessionRes.data.session){
+    var user = sessionRes.data.session.user;
+    await loadProfile(user);
+  }
+
+  // Listen for auth changes
+  sb.auth.onAuthStateChange(async function(event, session){
+    if(session){
+      await loadProfile(session.user);
+      launchApp();
+    } else {
+      currentUser = null;
+      currentProfile = null;
+      showPublicMode();
+    }
+  });
+
+  await loadArticles();
+  overlay.style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  if(currentProfile){
+    launchApp();
+  } else {
+    showPublicMode();
+  }
+}
+
+async function loadProfile(user){
+  currentUser = user;
+  var email = user.email;
+  var role = STAFF_ROLES[email] || 'viewer';
+  var name = STAFF_NAMES[email] || email.split('@')[0];
+  currentProfile = { email: email, name: name, role: role };
+}
+
+async function loadArticles(){
+  if(!sb) return;
+  var res = await sb.from('articles').select('*').order('updated_at', {ascending: false});
+  if(res.data) articlesCache = res.data;
+}
+
+function showPublicMode(){
+  document.getElementById('staffLoginBtn').style.display = 'flex';
+  document.getElementById('userAvatar').style.display = 'none';
+  renderHome();
+}
+
+function launchApp(){
+  document.getElementById('staffLoginBtn').style.display = 'none';
+  var av = document.getElementById('userAvatar');
+  av.style.display = 'flex';
+  var init = currentProfile.name.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
+  document.getElementById('userInitials').textContent = init;
+  document.getElementById('menuName').textContent = currentProfile.name;
+  var roleLabels = {admin:'🔴 Admin', editor:'🔵 Editor', reviewer:'🟡 Revisor'};
+  var roleClasses = {admin:'role-admin', editor:'role-editor', reviewer:'role-reviewer'};
+  var rel = document.getElementById('menuRole');
+  rel.textContent = roleLabels[currentProfile.role] || currentProfile.role;
+  rel.className = 'user-menu-role ' + (roleClasses[currentProfile.role] || '');
+  renderHome();
+}
+
+// ══ AUTH ══
+function showLoginModal(){
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginError').style.display = 'none';
+}
+function hideLoginModal(){ document.getElementById('loginScreen').style.display = 'none'; }
+
+async function doLogin(){
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  if(!email||!pass){ showErr('loginError','Rellena email y contraseña.'); return; }
+
+  // Check if email is in staff list
+  if(!STAFF_ROLES[email]){ showErr('loginError','Este email no tiene acceso staff.'); return; }
+
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+
+  var res = await sb.auth.signInWithPassword({email: email, password: pass});
+  btn.disabled = false; btn.textContent = 'Entrar';
+
+  if(res.error){ showErr('loginError', res.error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos.' : res.error.message); return; }
+  hideLoginModal();
+  showToast('Bienvenido, ' + (STAFF_NAMES[email] || email) + ' 👋');
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  showPublicMode();
+  showToast('Sesión cerrada');
+}
+
+function toggleUserMenu(){ document.getElementById('userMenu').classList.toggle('open'); }
+document.addEventListener('click', function(e){
+  var av = document.getElementById('userAvatar');
+  if(av && !av.contains(e.target)) document.getElementById('userMenu').classList.remove('open');
+});
+
+function showErr(id,msg){ var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; setTimeout(function(){el.style.display='none'},4000); }
+
+// ══ NAVIGATION ══
+function setNav(a){ ['navHome','navIndex','navGloss'].forEach(function(id){document.getElementById(id).classList.remove('active')}); if(a)document.getElementById(a).classList.add('active'); }
+function hideAll(){ ['homeView','articleView','indexView','glossaryView','editorView','searchResults'].forEach(function(id){document.getElementById(id).style.display='none'}); }
+function show(id){ document.getElementById(id).style.display='block'; }
+function showHome(){ hideAll(); show('homeView'); setNav('navHome'); clearSearch(); renderHome(); }
+function showIndex(){ hideAll(); show('indexView'); setNav('navIndex'); clearSearch(); renderIndex(); }
+function showGlossary(){ hideAll(); show('glossaryView'); setNav('navGloss'); clearSearch(); renderGlossary(); }
+
+function filterSection(sec){
+  var arts = articlesCache.filter(function(a){ return a.section===sec; });
+  hideAll(); show('searchResults'); setNav(null);
+  document.getElementById('searchResults').innerHTML =
+    '<h2>SECCIÓN: <span>'+sec+'</span></h2>' +
+    arts.map(function(a){ return resultCard(a,''); }).join('') +
+    '<div class="spacer"></div>';
+}
+
+// ══ HOME ══
+function renderHome(){
+  var arts = articlesCache;
+  document.getElementById('statArticles').textContent = arts.length || '—';
+  document.getElementById('statVerified').textContent = arts.filter(function(a){return a.verified}).length || '—';
+  var secs = ['Apertura y Cierre','Atencion al Cliente','Cocina y Protocolo','Higiene y Seguridad','Gestion de Personal','Emergencias'];
+  secs.forEach(function(s,i){
+    var cnt = arts.filter(function(a){return a.section===s}).length;
+    document.getElementById('cnt'+i).textContent = cnt + ' artículo' + (cnt!==1?'s':'');
+  });
+  var recent = arts.slice(0,6);
+  document.getElementById('recentList').innerHTML = recent.length
+    ? recent.map(function(a){
+        return '<div class="recent-item" onclick="showArticle(\''+a.id+'\')">'
+          +'<div class="ri-dot"></div>'
+          +'<div class="ri-title">'+a.icon+' '+a.title+'</div>'
+          +'<div class="ri-section">'+(a.verified?'&#10003;':'&#128336;')+'</div>'
+          +'</div>';
+      }).join('')
+    : '<div style="color:var(--grey);font-size:13px;padding:12px 0">Aún no hay artículos.</div>';
+
+  document.getElementById('addBtnWrap').innerHTML = canEdit()
+    ? '<button class="add-btn" onclick="openEditor()">+ Añadir nueva página</button>' : '';
+}
+
+// ══ ARTICLE ══
+function showArticle(id){
+  var art = articlesCache.find(function(a){ return a.id===id; });
+  if(!art){ showToast('Artículo no encontrado'); return; }
+  currentArticleId = id;
+  hideAll(); show('articleView'); setNav(null); window.scrollTo(0,0);
+
+  var vbadge = art.verified
+    ? '<span class="badge-verified">&#10003; Revisado por '+art.verified_by+' &middot; '+fmtDate(art.verified_date)+'</span>'
+    : '<span class="badge-pending">&#128336; Pendiente de revisión</span>';
+
+  var actions = '';
+  if(canVerify() && !art.verified){
+    actions += '<button class="btn-verify" onclick="openVerifyModal(\''+id+'\')">&#10003; Marcar como revisado</button>';
+  }
+  if(canEdit()){
+    actions += '<button class="btn-secondary" onclick="openEditor(\''+id+'\')">&#9999; Editar</button>';
+  }
+  if(canDelete()){
+    actions += '<button class="btn-secondary" style="color:#ff6655;border-color:#cc3322" onclick="openDeleteModal(\''+id+'\')">&#128465; Eliminar</button>';
+  }
+  if(actions) actions = '<div class="article-actions">'+actions+'</div>';
+
+  var related = (art.related||[]).map(function(rid){
+    var r = articlesCache.find(function(a){ return a.id===rid; });
+    if(!r) return '';
+    return '<div class="related-card" onclick="showArticle(\''+r.id+'\')">'
+      +'<div class="rc-title">'+r.icon+' '+r.title+'</div>'
+      +'<div class="rc-section">'+r.section+'</div></div>';
+  }).join('');
+
+  var tags = (art.tags||[]).map(function(t){ return '<span class="tag">#'+t+'</span>'; }).join('');
+
+  document.getElementById('articleView').innerHTML =
+    '<div class="breadcrumb"><a onclick="showHome()">Inicio</a><span>›</span><span>'+art.section+'</span><span>›</span><span>'+art.title+'</span></div>'
+    +'<div class="article-title">'+art.title+'</div>'
+    +'<div class="article-meta-bar">'+vbadge+'<span class="article-meta-text">Actualizado: <span>'+fmtDate(art.updated_at)+'</span></span></div>'
+    +actions
+    +'<div class="article-content">'+art.body+'</div>'
+    +'<div class="tag-list">'+tags+'</div>'
+    +(related ? '<div class="related-articles"><div class="related-title">VER TAMBIÉN</div><div class="related-grid">'+related+'</div></div>' : '')
+    +'<div class="spacer"></div>';
+}
+
+// ══ VERIFY ══
+function openVerifyModal(id){ pendingVerifyId=id; document.getElementById('verifyModal').classList.add('open'); }
+async function confirmVerify(){
+  var now = new Date().toISOString();
+  var res = await sb.from('articles').update({
+    verified: true,
+    verified_by: currentProfile.name,
+    verified_date: now
+  }).eq('id', pendingVerifyId);
+  if(res.error){ showToast('Error al verificar'); closeModal(); return; }
+  await loadArticles();
+  closeModal();
+  showToast('✅ Artículo verificado por ' + currentProfile.name);
+  showArticle(pendingVerifyId);
+}
+
+// ══ DELETE ══
+function openDeleteModal(id){ pendingDeleteId=id; document.getElementById('deleteModal').classList.add('open'); }
+async function confirmDelete(){
+  var res = await sb.from('articles').delete().eq('id', pendingDeleteId);
+  if(res.error){ showToast('Error al eliminar'); closeModal(); return; }
+  await loadArticles();
+  closeModal();
+  showToast('Artículo eliminado');
+  showHome();
+}
+function closeModal(){
+  document.getElementById('verifyModal').classList.remove('open');
+  document.getElementById('deleteModal').classList.remove('open');
+}
+
+// ══ EDITOR ══
+function openEditor(id){
+  if(!canEdit()){ showToast('Sin permisos para editar'); return; }
+  hideAll(); show('editorView'); setNav(null);
+  if(id){
+    var art = articlesCache.find(function(a){ return a.id===id; });
+    document.getElementById('editorTitle').textContent = 'EDITAR ARTÍCULO';
+    document.getElementById('editId').value = id;
+    document.getElementById('editTitle').value = art.title;
+    document.getElementById('editSection').value = art.section;
+    document.getElementById('editTags').value = (art.tags||[]).join(', ');
+    document.getElementById('editBody').value = art.body;
+  } else {
+    document.getElementById('editorTitle').textContent = 'NUEVA PÁGINA';
+    document.getElementById('editId').value = '';
+    document.getElementById('editTitle').value = '';
+    document.getElementById('editTags').value = '';
+    document.getElementById('editBody').value = '';
+  }
+  window.scrollTo(0,0);
+}
+
+function cancelEdit(){ if(currentArticleId) showArticle(currentArticleId); else showHome(); }
+
+async function saveArticle(){
+  var id = document.getElementById('editId').value;
+  var title = document.getElementById('editTitle').value.trim();
+  var section = document.getElementById('editSection').value;
+  var tagsRaw = document.getElementById('editTags').value;
+  var body = document.getElementById('editBody').value.trim();
+  if(!title||!body){ showToast('Título y contenido son obligatorios'); return; }
+
+  var tags = tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean);
+  var icons = {'Apertura y Cierre':'&#128273;','Atencion al Cliente':'&#129309;','Cocina y Protocolo':'&#127859;','Higiene y Seguridad':'&#129528;','Gestion de Personal':'&#128101;','Emergencias':'&#128680;'};
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  var res;
+  if(id){
+    res = await sb.from('articles').update({
+      title: title, section: section, icon: icons[section]||'&#128196;',
+      tags: tags, body: body, updated_at: new Date().toISOString(),
+      author: currentProfile.name
+    }).eq('id', id);
+  } else {
+    var newId = title.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
+      + '-' + Date.now();
+    res = await sb.from('articles').insert({
+      id: newId, title: title, section: section, icon: icons[section]||'&#128196;',
+      tags: tags, body: body, related: [],
+      author: currentProfile.name,
+      verified: false, verified_by: null, verified_date: null,
+      updated_at: new Date().toISOString()
+    });
+    currentArticleId = newId;
+  }
+
+  btn.disabled = false; btn.textContent = 'Guardar artículo';
+
+  if(res.error){ showToast('Error al guardar: ' + res.error.message); return; }
+  await loadArticles();
+  showToast(id ? '✅ Artículo actualizado' : '✅ Artículo creado');
+  showArticle(currentArticleId || id);
+}
+
+// ══ INDEX ══
+function renderIndex(){
+  var arts = articlesCache;
+  var byL = {};
+  arts.forEach(function(a){ var l=a.title[0].toUpperCase(); if(!byL[l])byL[l]=[]; byL[l].push(a); });
+  document.getElementById('indexContent').innerHTML = Object.keys(byL).sort().map(function(l){
+    return '<div class="index-letter-group"><div class="letter-head">'+l+'</div><div class="index-links">'
+      + byL[l].map(function(a){
+          return '<span class="index-link" onclick="showArticle(\''+a.id+'\')">'+(a.verified?'&#10003; ':'&#128336; ')+a.title+'</span>';
+        }).join('')
+      +'</div></div>';
+  }).join('');
+}
+
+// ══ GLOSSARY ══
+function renderGlossary(){
+  document.getElementById('glossaryContent').innerHTML =
+    GLS.map(function(g){ return '<div class="gloss-entry"><div class="gloss-term">'+g.term+'</div><div class="gloss-def">'+g.def+'</div></div>'; }).join('')
+    + '<div class="spacer"></div>';
+}
+
+// ══ SEARCH ══
+function doSearch(q){
+  q = q.trim().toLowerCase();
+  if(!q){ clearSearch(); showHome(); return; }
+  hideAll(); show('searchResults'); setNav(null);
+  var res = articlesCache.filter(function(a){
+    return (a.title+' '+a.section+' '+(a.tags||[]).join(' ')+' '+a.body).toLowerCase().includes(q);
+  });
+  document.getElementById('searchResults').innerHTML =
+    '<h2>BÚSQUEDA: <span>"'+q+'"</span> — '+res.length+' resultado'+(res.length!==1?'s':'')+'</h2>'
+    + (res.length ? res.map(function(a){ return resultCard(a,q); }).join('') : '<p class="no-results">No se encontraron resultados.</p>')
+    + '<div class="spacer"></div>';
+}
+
+function resultCard(art, q){
+  var plain = art.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+  var excerpt = '';
+  if(q){
+    var idx = plain.toLowerCase().indexOf(q);
+    if(idx!==-1){
+      var s=Math.max(0,idx-60), e=Math.min(plain.length,idx+q.length+80);
+      excerpt = (s>0?'…':'') + plain.slice(s,e).replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),function(m){ return '<mark>'+m+'</mark>'; }) + (e<plain.length?'…':'');
+    }
+  } else { excerpt = plain.slice(0,120)+(plain.length>120?'…':''); }
+  return '<div class="search-result-item" onclick="showArticle(\''+art.id+'\')">'
+    +'<div class="res-title">'+art.icon+' '+art.title+' '+(art.verified?'&#10003;':'&#128336;')+'</div>'
+    +'<div class="res-section">'+art.section+'</div>'
+    +(excerpt?'<div class="res-excerpt">'+excerpt+'</div>':'')
+    +'</div>';
+}
+
+function clearSearch(){ document.getElementById('searchInput').value=''; }
+
+// ══ EXPORT MAP ══
+function exportMap(){
+  var arts = articlesCache;
+  var d = new Date();
+  var ds = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  var L = [];
+  var hr = '======================================';
+  L.push('ROCKAWIKI - MAPA DE CONTENIDOS');
+  L.push('Exportado: '+ds);
+  L.push('');
+  L.push(hr);
+  L.push('ARTICULOS ('+arts.length+')');
+  L.push(hr);
+  arts.forEach(function(a){
+    var status = a.verified ? 'VERIFICADO por '+a.verified_by : 'PENDIENTE DE REVISION';
+    var linked = [];
+    var tmp = a.body; var marker = "showArticle('"; var pos = tmp.indexOf(marker);
+    while(pos!==-1){ var q1=tmp.indexOf("'",pos+marker.length); var q2=tmp.indexOf("'",q1+1); if(q1!==-1&&q2!==-1) linked.push(tmp.slice(q1+1,q2)); pos=tmp.indexOf(marker,pos+1); }
+    L.push(''); L.push('['+a.id+']');
+    L.push('  Titulo:      '+a.title);
+    L.push('  Seccion:     '+a.section);
+    L.push('  Etiquetas:   '+(a.tags||[]).join(', '));
+    L.push('  Estado:      '+status);
+    L.push('  Relacionados:'+(a.related||[]).join(', '));
+    if(linked.length) L.push('  Enlaza a:    '+linked.filter(function(x,i,arr){return arr.indexOf(x)===i}).join(', '));
+  });
+  L.push(''); L.push(hr); L.push('IDs PARA HIPERVINCULOS'); L.push(hr);
+  L.push('Formato: <a class="wiki-link" onclick="showArticle(\'ID\')">texto</a>'); L.push('');
+  arts.forEach(function(a){ L.push('  '+a.id+' -> '+a.title); });
+  L.push(''); L.push(hr); L.push('ETIQUETAS'); L.push(hr);
+  var allTags={};
+  arts.forEach(function(a){(a.tags||[]).forEach(function(t){if(!allTags[t])allTags[t]=[];allTags[t].push(a.id)});});
+  Object.keys(allTags).sort().forEach(function(t){ L.push('  #'+t+' -> '+allTags[t].join(', ')); });
+  L.push(''); L.push(hr); L.push('GLOSARIO'); L.push(hr);
+  GLS.forEach(function(g){ L.push('  '+g.term+': '+g.def); });
+  L.push(''); L.push(hr); L.push('PROMPT PARA NUEVO ARTICULO'); L.push(hr);
+  L.push('Pega esto junto al articulo que quieras convertir:'); L.push('');
+  L.push('---');
+  L.push('Te adjunto el mapa de RockaWiki. Usalo para generar hipervinculos correctos.');
+  L.push('Los ids entre corchetes van dentro de showArticle(id).');
+  L.push('Si el articulo menciona algo que no esta en el mapa, indicalo como nuevo articulo sugerido.');
+  L.push('---');
+  var text = L.join('\n');
+  var blob = new Blob([text],{type:'text/plain;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var el = document.createElement('a');
+  el.href=url; el.download='rockawiki-mapa-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.txt';
+  document.body.appendChild(el); el.click(); document.body.removeChild(el); URL.revokeObjectURL(url);
+  showToast('Mapa exportado');
+}
+
+// ══ UTILS ══
+function fmtDate(iso){
+  if(!iso) return '—';
+  var d = new Date(iso);
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2500); }
+
+init();
+</script>
+</body>
+</html>
