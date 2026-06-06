@@ -441,10 +441,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 
 <div id="inboxView" class="container">
   <div class="inbox-header">BANDEJA <span class="inbox-count" id="inboxCount"></span></div>
-  <div class="inbox-tabs">
-    <button class="inbox-tab active" id="tabProblems" onclick="switchInboxTab('problems')">&#9888; Problemas activos</button>
-    <button class="inbox-tab" id="tabComments" onclick="switchInboxTab('comments')">&#128172; Comentarios nuevos</button>
-  </div>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Problemas activos y comentarios sin resolver</div>
   <div id="inboxContent"></div>
   <div class="spacer"></div>
 </div>
@@ -1611,7 +1608,6 @@ async function submitComment(articleId){
 
 // ── INBOX / NOTIFICATIONS ──
 var inboxData = { problems: [], comments: [] };
-var currentInboxTab = 'problems';
 
 async function loadInboxData(){
   if(!sb || !isAdmin()) return;
@@ -1659,12 +1655,7 @@ function showInbox(){
   loadInboxData().then(function(){ renderInbox(); });
 }
 
-function switchInboxTab(tab){
-  currentInboxTab = tab;
-  document.getElementById('tabProblems').className = 'inbox-tab' + (tab==='problems' ? ' active' : '');
-  document.getElementById('tabComments').className = 'inbox-tab' + (tab==='comments' ? ' active' : '');
-  renderInbox();
-}
+
 
 function renderInbox(){
   var container = document.getElementById('inboxContent');
@@ -1882,10 +1873,11 @@ var myReportsCache = [];
 async function loadMyReports(){
   if(!sb || !currentProfile) return;
   var res = await sb.from('comments')
-    .select('id,article_id,text,created_at,resolved,is_report')
+    .select('id,article_id,text,created_at,resolved,is_report,resolved_by,resolved_at')
     .eq('author', currentProfile.name)
     .eq('is_report', true)
     .order('created_at', {ascending:false});
+  // Show ALL reports (resolved and pending) — never hide
   myReportsCache = res.data || [];
   var open = myReportsCache.filter(function(c){ return !c.resolved; }).length;
   var badge = document.getElementById('menuMyReportsBadge');
