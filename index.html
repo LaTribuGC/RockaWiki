@@ -1220,24 +1220,36 @@ function clearSearch(){
 // ══ EXPORT MAP (admin only) ══
 
 
-function copyCommentContext(artId, artTitle, artSection, author, commentText){
+function copyCommentContext(btn){
+  var artId       = btn.getAttribute('data-artid');
+  var artTitle    = btn.getAttribute('data-title');
+  var artSection  = btn.getAttribute('data-section');
+  var author      = btn.getAttribute('data-author');
+  var commentText = btn.getAttribute('data-comment');
+
   var art = articlesCache.find(function(a){ return a.id===artId; });
-  if(!art){ showToast('Articulo no encontrado'); return; }
+  if(!art){ showToast('Articulo no encontrado en cache'); return; }
 
-  var plainBody = art.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  var lines = [];
+  lines.push('Eres el editor de La TribuWiki. Un revisor ha encontrado un problema en el siguiente articulo.');
+  lines.push('Corrige SOLO lo que indica el comentario y devuelve el HTML completo del body corregido, sin explicaciones, listo para pegar en el editor.');
+  lines.push('');
+  lines.push('=== ARTICULO ===');
+  lines.push('Titulo:  ' + artTitle);
+  lines.push('Seccion: ' + artSection);
+  lines.push('ID:      ' + artId);
+  lines.push('');
+  lines.push('=== CONTENIDO ACTUAL (HTML) ===');
+  lines.push(art.body);
+  lines.push('');
+  lines.push('=== COMENTARIO DEL REVISOR ===');
+  lines.push('Autor:   ' + author);
+  lines.push('Problema: ' + commentText);
+  lines.push('');
+  lines.push('=== INSTRUCCION ===');
+  lines.push('Devuelve SOLO el HTML del body corregido. Mantén hipervinculos, estructura y formato. Sin texto adicional.');
 
-  var prompt = 'Eres el editor de contenido de La TribuWiki. Un revisor ha encontrado un problema en el siguiente articulo. Corrige SOLO lo que indica el comentario y devuelve el articulo completo en formato HTML listo para publicar, manteniendo la misma estructura.'
-    +'\n\n'
-    +'--- ARTICULO A CORREGIR ---'
-    +'\nTITULO: '+artTitle
-    +'\nSECCION: '+artSection
-    +'\nID: '+artId
-    +'\n\nCONTENIDO ACTUAL (HTML):\n'+art.body
-    +'\n\n--- COMENTARIO DEL REVISOR ---'
-    +'\nAutor: '+author
-    +'\nProblema: '+commentText
-    +'\n\n--- FIN ---'
-    +'\n\nDevuelveme SOLO el HTML corregido del body, sin explicaciones, listo para pegar en el editor de La TribuWiki. Mantén todos los hipervinculos existentes y el mismo formato.';
+  var prompt = lines.join('\n');
 
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(prompt).then(function(){
@@ -1476,7 +1488,18 @@ function buildCommentsHtml(art){
         var isFlag = c.text.indexOf('[PROBLEMA') === 0 || c.text.indexOf('[RESUELTO') === 0;
         var resolvedClass = c.resolved ? ' comment-resolved' : '';
         var adminBtns = '';
-        var copyBtn = '<button class="comment-btn copy" onclick="copyCommentContext('+JSON.stringify(art.id)+','+JSON.stringify(art.title)+','+JSON.stringify(art.section)+','+JSON.stringify(c.author)+','+JSON.stringify(c.text)+')">&#128203; Copiar para IA</button>';
+        var safeId     = (art.id||'').replace(/"/g,'&quot;');
+        var safeTitle  = (art.title||'').replace(/"/g,'&quot;');
+        var safeSection= (art.section||'').replace(/"/g,'&quot;');
+        var safeAuthor = (c.author||'').replace(/"/g,'&quot;');
+        var safeText   = (c.text||'').replace(/"/g,'&quot;');
+        var copyBtn = '<button class="comment-btn copy"'
+          +' data-artid="'+safeId+'"'
+          +' data-title="'+safeTitle+'"'
+          +' data-section="'+safeSection+'"'
+          +' data-author="'+safeAuthor+'"'
+          +' data-comment="'+safeText+'"'
+          +' onclick="copyCommentContext(this)">&#128203; Copiar para IA</button>';
         if(isAdmin() && !c.resolved){
           adminBtns = '<div class="comment-actions">'
             +copyBtn
