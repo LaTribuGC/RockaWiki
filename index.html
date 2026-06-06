@@ -761,6 +761,7 @@ function renderHome(){
   }
   if(isAdmin()){
     staffHtml += '<button class="export-btn" onclick="exportMap()">&#128196; Exportar mapa de contenidos</button>';
+    staffHtml += '<button class="export-btn" style="border-color:var(--blue);color:var(--blue)" onclick="copyPromptWithMap()">&#128203; Copiar prompt + mapa listo para usar</button>';
   }
   document.getElementById('staffHomeActions').innerHTML = staffHtml;
 }
@@ -780,7 +781,9 @@ async function showArticle(id){
 
   var vbadge = art.verified
     ? '<span class="badge-verified">&#10003; Revisado por '+art.verified_by+' &middot; '+fmtDate(art.verified_date)+'</span>'
-    : '<span class="badge-pending">&#128336; Pendiente de revision</span>';
+    : art.needs_reverify
+      ? '<span class="badge-issue" style="border-color:var(--amber);color:var(--amber);background:#2a1a00">&#9651; Contenido actualizado — requiere reverificacion</span>'
+      : '<span class="badge-pending">&#128336; Pendiente de revision</span>';
 
   var actions = '';
   if(canVerify() && !art.verified)
@@ -967,15 +970,37 @@ function previewCSV(){
   reader.onload = function(e){
     csvParsed = parseCSV(e.target.result);
     if(!csvParsed.length){ showToast('No se encontraron filas validas'); return; }
-    var html = csvParsed.map(function(row,i){
+
+    // Pre-analyze against existing articles
+    var existingIds = {};
+    articlesCache.forEach(function(a){ existingIds[a.id] = true; });
+
+    var rows = csvParsed.map(function(row,i){
+      var id = (row.id||'').replace(/[^a-z0-9-]/g,'');
+      if(!id) id = (row.title||'art').toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g,'')
+        .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      var isNew = !existingIds[id];
+      var color = isNew ? 'var(--green)' : 'var(--amber)';
+      var label = isNew ? 'NUEVO' : 'ACTUALIZA';
       return '<div class="import-row">'
         +'<span class="import-row-num">'+(i+1)+'</span>'
         +'<span class="import-row-title">'+(row.title||'Sin titulo')+'</span>'
-        +'<span class="import-row-section">'+(row.section||'-')+'</span>'
+        +'<span class="import-row-section" style="color:'+color+';font-weight:600">'+label+'</span>'
         +'</div>';
     }).join('');
-    document.getElementById('importRows').innerHTML = html;
-    document.getElementById('importStatus').textContent = csvParsed.length + ' articulos listos para publicar.';
+
+    var newCount = csvParsed.filter(function(row){
+      var id = (row.id||'').replace(/[^a-z0-9-]/g,'') ||
+        (row.title||'art').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-');
+      return !existingIds[id];
+    }).length;
+    var updateCount = csvParsed.length - newCount;
+
+    document.getElementById('importRows').innerHTML = rows;
+    document.getElementById('importStatus').innerHTML =
+      '<span style="color:var(--green)">+ '+newCount+' nuevos</span> &nbsp; '
+      +'<span style="color:var(--amber)">~ '+updateCount+' actualizan existentes</span>';
     document.getElementById('importPreview').style.display = 'block';
   };
   reader.readAsText(file, 'UTF-8');
@@ -984,28 +1009,68 @@ function previewCSV(){
 async function doImport(){
   if(!csvParsed.length){ showToast('Nada que importar'); return; }
   var btn = document.getElementById('importBtn');
-  btn.disabled=true; btn.textContent='Importando...';
+  btn.disabled=true; btn.textContent='Analizando...';
   var now = new Date().toISOString();
-  var ok=0; var err=0;
+
+  var existingRes = await sb.from('articles').select('id,body,verified,verified_by,verified_date');
+  var existing = {};
+  (existingRes.data||[]).forEach(function(a){ existing[a.id]=a; });
+
+  var created=0, updated=0, unchanged=0, reverify=0, errors=0;
+  var total = csvParsed.length;
+
   for(var i=0;i<csvParsed.length;i++){
     var row = csvParsed[i];
-    var id = (row.id||'').replace(/[^a-z0-9-]/g,'') || row.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-')+'-'+Date.now()+i;
-    var tags = (row.tags||'').split(',').map(function(t){return t.trim()}).filter(Boolean);
-    var related = (row.related||'').split(',').map(function(t){return t.trim()}).filter(Boolean);
-    var res = await sb.from('articles').upsert({
-      id:id, title:row.title||'Sin titulo', section:row.section||'Emergencias',
-      icon:ICONS[row.section]||'&#128196;', tags:tags, related:related,
-      body:row.body||'', author:currentProfile.name,
-      verified:false, verified_by:null, verified_date:null,
-      updated_at:now, last_edited_by:null, last_edited_at:null
-    });
-    if(res.error) err++; else ok++;
-    document.getElementById('importStatus').textContent = 'Publicando... '+(i+1)+'/'+csvParsed.length;
+    var id = (row.id||'').replace(/[^a-z0-9-]/g,'');
+    if(!id) id = (row.title||'art').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    var tags = (row.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean);
+    var related = (row.related||'').split(',').map(function(t){return t.trim();}).filter(Boolean);
+    var newBody = (row.body||'').trim();
+    document.getElementById('importStatus').textContent = 'Procesando '+(i+1)+'/'+total+'...';
+
+    if(existing[id]){
+      var prev = existing[id];
+      if(prev.body === newBody){ unchanged++; continue; }
+      var upd = {
+        title:row.title||'Sin titulo', section:row.section||'Emergencias',
+        icon:ICONS[row.section]||'&#128196;', tags:tags, related:related,
+        body:newBody, updated_at:now,
+        last_edited_by:currentProfile.name, last_edited_at:now
+      };
+      if(prev.verified){
+        upd.verified=false; upd.verified_by=null; upd.verified_date=null;
+        upd.needs_reverify=true; upd.prev_verified_by=prev.verified_by;
+        reverify++;
+      } else { updated++; }
+      var r = await sb.from('articles').update(upd).eq('id',id);
+      if(r.error) errors++;
+    } else {
+      var r = await sb.from('articles').insert({
+        id:id, title:row.title||'Sin titulo', section:row.section||'Emergencias',
+        icon:ICONS[row.section]||'&#128196;', tags:tags, related:related,
+        body:newBody, author:currentProfile.name,
+        verified:false, verified_by:null, verified_date:null,
+        updated_at:now, last_edited_by:null, last_edited_at:null, needs_reverify:false
+      });
+      if(r.error) errors++; else created++;
+    }
   }
+
   await loadArticles();
-  btn.disabled=false; btn.textContent='Publicar todos';
-  showToast(ok+' articulos publicados'+(err?' ('+err+' errores)':''));
-  showHome();
+  btn.disabled=false; btn.textContent='Importar';
+  document.getElementById('importStatus').innerHTML =
+    '<div style="margin-top:12px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;font-family:IBM Plex Mono,monospace;font-size:12px;line-height:2">'
+    +'<strong style="color:var(--white);display:block;margin-bottom:4px">Importacion completada</strong>'
+    +(created    ? '<span style="color:var(--green)">+ '+created+' articulos nuevos</span><br>' : '')
+    +(updated    ? '<span style="color:var(--blue)">~ '+updated+' actualizados</span><br>' : '')
+    +(reverify   ? '<span style="color:var(--amber)">! '+reverify+' necesitan reverificacion (contenido cambiado)</span><br>' : '')
+    +(unchanged  ? '<span style="color:var(--grey)">= '+unchanged+' sin cambios (no tocados)</span><br>' : '')
+    +(errors     ? '<span style="color:var(--red-b)">x '+errors+' errores</span>' : '')
+    +'</div>';
+  if(reverify > 0) showToast(reverify+' articulos necesitan reverificacion');
+  else showToast([created?'+ '+created+' nuevos':'', updated?'~ '+updated+' actualizados':'', unchanged?'= '+unchanged+' sin cambios':''].filter(Boolean).join(' · '));
 }
 
 // ══ INDEX ══
@@ -1152,6 +1217,89 @@ function clearSearch(){
 }
 
 // ══ EXPORT MAP (admin only) ══
+
+function copyPromptWithMap(){
+  if(!isAdmin()){ showToast('Solo el admin puede usar esta funcion'); return; }
+  var arts = articlesCache;
+  var d = new Date();
+  var ds = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  var hr = '======================================';
+
+  // Build map
+  var mapLines = [];
+  mapLines.push('MAPA DE CONTENIDOS — La TribuWiki');
+  mapLines.push('Exportado: '+ds);
+  mapLines.push('');
+  mapLines.push(hr);
+  mapLines.push('IDs EXISTENTES (para hipervinculos)');
+  mapLines.push(hr);
+  arts.forEach(function(a){ mapLines.push('  '+a.id+' -> '+a.title+' ['+a.section+']'); });
+  mapLines.push('');
+  mapLines.push(hr);
+  mapLines.push('ETIQUETAS EXISTENTES');
+  mapLines.push(hr);
+  var allTags={};
+  arts.forEach(function(a){(a.tags||[]).forEach(function(t){if(!allTags[t])allTags[t]=[];allTags[t].push(a.id);});});
+  Object.keys(allTags).sort().forEach(function(t){ mapLines.push('  #'+t+' -> '+allTags[t].join(', ')); });
+
+  var map = mapLines.join('\n');
+
+  var prompt = 'Eres el editor de contenido de La TribuWiki, la wiki interna de un grupo de restaurantes (Rocaville y Chihuahua). El documento adjunto contiene informacion que debes dividir en articulos independientes y entregarlos en formato CSV para importacion.\n\n'
+    +'GENERA EL CSV con estas columnas separadas por punto y coma (;):\n'
+    +'id;title;section;tags;related;body\n\n'
+    +'REGLAS CRITICAS:\n'
+    +'- id: ESTABLE Y UNICO. Del titulo: minusculas, sin tildes, sin espacios (guiones), sin caracteres especiales. NUNCA timestamps ni numeros aleatorios. Mismo titulo = mismo id siempre. Ej: "Protocolo de Apertura" -> protocolo-de-apertura\n'
+    +'- title: titulo completo\n'
+    +'- section: exactamente una de: Apertura y Cierre / Atencion al Cliente / Cocina y Protocolo / Higiene y Seguridad / Gestion de Personal / Emergencias\n'
+    +'- tags: entre comillas, separadas por comas. Ej: "apertura,manager,checklist"\n'
+    +'- related: IDs del mapa adjunto entre comillas. Ej: "apertura-cierre,higiene-seguridad". Si no hay: ""\n'
+    +'- body: HTML completo entre comillas dobles. Saltos de linea como \\n. Comillas dentro del HTML como \' (simples).\n\n'
+    +'FORMATO HTML DEL BODY:\n'
+    +'- <h2 id="seccion">Titulo seccion</h2> para secciones\n'
+    +'- <p>parrafo</p> para texto\n'
+    +'- <ul><li>item</li></ul> para listas\n'
+    +'- <strong>negrita</strong> para conceptos clave\n'
+    +'- <div class="callout"><strong>Aviso:</strong> texto</div> para advertencias\n\n'
+    +'HIPERVINCULOS — usa el mapa adjunto:\n'
+    +'<a class="wiki-link" onclick="showArticle(\'id\')">texto visible</a>\n'
+    +'No inventes IDs. Si un concepto no tiene pagina, anotalo al final como ARTICULOS SUGERIDOS.\n\n'
+    +'ESTILO: directo, imperativo, sin introducciones. Terminologia fija: manager, empleado, cliente, local.\n\n'
+    +'ENTREGA:\n'
+    +'1. CSV completo listo para copiar\n'
+    +'2. Resumen: numero de articulos, secciones usadas\n'
+    +'3. ARTICULOS SUGERIDOS: conceptos sin pagina propia\n\n'
+    +'--- MAPA ACTUAL DE LA TRIBUWIKI ---\n'
+    +map+'\n'
+    +'--- FIN DEL MAPA ---';
+
+  // Copy to clipboard
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(prompt).then(function(){
+      showToast('Prompt copiado. Pégalo en Claude junto al PDF');
+    }).catch(function(){
+      fallbackCopy(prompt);
+    });
+  } else {
+    fallbackCopy(prompt);
+  }
+}
+
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Prompt copiado. Pegalo en Claude junto al PDF');
+  } catch(e) {
+    showToast('No se pudo copiar. Usa el boton Exportar mapa.');
+  }
+  document.body.removeChild(ta);
+}
+
 function exportMap(){
   if(!isAdmin()){ showToast('Solo el admin puede exportar el mapa'); return; }
   var arts = articlesCache;
