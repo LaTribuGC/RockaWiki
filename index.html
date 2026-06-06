@@ -972,7 +972,7 @@ function renderGlossary(){
     var actions = canEditGloss
       ? '<div class="gloss-actions">'
         +'<button class="gloss-btn" onclick="openGlossEditor('+JSON.stringify(g)+')">Editar</button>'
-        +'<button class="gloss-btn del" onclick="deleteGlossTerm('+g.id+',''+g.term.replace(/'/g,"\'")+'')" >Borrar</button>'
+        +'<button class="gloss-btn del" onclick="deleteGlossTerm('+g.id+',this)" data-term="'+g.term.replace(/"/g,"&quot;")+'">Borrar</button>'
         +'</div>'
       : '';
     return '<div class="gloss-entry"><div class="gloss-entry-text"><div class="gloss-term">'+g.term+'</div><div class="gloss-def">'+g.definition+'</div></div>'+actions+'</div>';
@@ -1018,7 +1018,8 @@ async function saveGlossTerm(){
   showToast(id ? 'Termino actualizado' : 'Termino añadido');
 }
 
-async function deleteGlossTerm(id, term){
+async function deleteGlossTerm(id, el){
+  var term = el ? el.getAttribute('data-term') : '';
   if(!confirm('Borrar el termino "'+term+'"?')) return;
   var res = await sb.from('glossary').delete().eq('id',id);
   if(res.error){ showToast('Error: '+res.error.message); return; }
