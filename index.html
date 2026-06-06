@@ -1220,6 +1220,7 @@ function clearSearch(){
 
 function copyPromptWithMap(){
   if(!isAdmin()){ showToast('Solo el admin puede usar esta funcion'); return; }
+  if(!articlesCache.length){ showToast('Esperando articulos... intenta de nuevo'); loadArticles().then(copyPromptWithMap); return; }
   var arts = articlesCache;
   var d = new Date();
   var ds = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
@@ -1273,10 +1274,12 @@ function copyPromptWithMap(){
     +'--- FIN DEL MAPA ---';
 
   // Copy to clipboard
+  // Try modern clipboard API first
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(prompt).then(function(){
-      showToast('Prompt copiado. Pégalo en Claude junto al PDF');
-    }).catch(function(){
+      showToast('Prompt copiado ✓ Pegalo en Claude junto al PDF');
+    }).catch(function(err){
+      console.warn('Clipboard API failed:', err);
       fallbackCopy(prompt);
     });
   } else {
@@ -1285,19 +1288,32 @@ function copyPromptWithMap(){
 }
 
 function fallbackCopy(text){
+  // Try execCommand first
   var ta = document.createElement('textarea');
   ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;opacity:0;border:none;outline:none';
   document.body.appendChild(ta);
+  ta.focus();
   ta.select();
-  try {
-    document.execCommand('copy');
-    showToast('Prompt copiado. Pegalo en Claude junto al PDF');
-  } catch(e) {
-    showToast('No se pudo copiar. Usa el boton Exportar mapa.');
-  }
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){}
   document.body.removeChild(ta);
+  if(ok){
+    showToast('Prompt copiado. Pegalo en Claude junto al PDF');
+    return;
+  }
+  // Last resort: show in a modal so user can copy manually
+  var modal = document.createElement('div');
+  modal.id = 'promptModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:#111;border:1px solid #2a2a2a;border-top:2px solid #cc2200;border-radius:6px;padding:20px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;gap:12px">'
+    +'<div style="font-family:Bebas Neue,cursive;font-size:20px;letter-spacing:2px">COPIA EL PROMPT</div>'
+    +'<p style="font-size:12px;color:#888;font-family:IBM Plex Mono,monospace">Selecciona todo el texto y copia (Ctrl+A, Ctrl+C)</p>'
+    +'<textarea style="flex:1;min-height:200px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;color:#f0ede8;font-family:IBM Plex Mono,monospace;font-size:11px;padding:10px;resize:none;outline:none" readonly>'+text+'</textarea>'
+    +'<button onclick="document.getElementById(\'promptModal\').remove()" style="background:#cc2200;color:white;border:none;border-radius:4px;padding:10px;font-family:IBM Plex Mono,monospace;font-size:13px;cursor:pointer">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+  modal.querySelector('textarea').select();
 }
 
 function exportMap(){
