@@ -32,13 +32,18 @@ body{background:var(--bg);color:var(--white);font-family:'IBM Plex Sans',sans-se
 header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;height:52px}
 .logo{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:3px;cursor:pointer;flex-shrink:0}
 .logo span{color:var(--red-b)}
-.search-wrap{flex:1;display:flex;align-items:center;background:var(--bg3);border:2px solid var(--red-d);border-radius:6px;padding:0 12px;transition:border-color .2s;gap:6px}
-.search-wrap:focus-within{border-color:var(--red-b);box-shadow:0 0 0 2px rgba(204,34,0,.15)}
-.search-wrap svg{color:var(--grey);flex-shrink:0;width:18px;height:18px}
-#searchInput{background:none;border:none;outline:none;color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:14px;width:100%;padding:10px 0}
-#searchInput::placeholder{color:var(--grey2);font-style:italic}
-.search-clear{background:none;border:none;color:var(--grey2);font-size:16px;cursor:pointer;padding:0 2px;line-height:1;display:none;flex-shrink:0}
+
+.header-search-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:1;max-width:36px;transition:border-color .15s,color .15s;flex-shrink:0}
+.header-search-btn:hover{border-color:var(--red);color:var(--red-b)}
+.header-search-btn svg{width:18px;height:18px}
+.hero-search-wrap{display:flex;align-items:center;background:var(--bg2);border:2px solid var(--red);border-radius:10px;padding:0 16px;margin-bottom:24px;gap:10px;transition:box-shadow .2s}
+.hero-search-wrap:focus-within{box-shadow:0 0 0 3px rgba(204,34,0,.2);border-color:var(--red-b)}
+.hero-search-wrap svg{color:var(--grey);flex-shrink:0;width:22px;height:22px}
+#searchInput{background:none;border:none;outline:none;color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:17px;width:100%;padding:16px 0;font-style:italic}
+#searchInput::placeholder{color:var(--grey2)}
+.search-clear{background:none;border:none;color:var(--grey2);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;display:none;flex-shrink:0}
 .search-clear:hover{color:var(--white)}
+
 .staff-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);font-size:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
 .staff-btn:hover{border-color:var(--red);color:var(--red-b)}
 .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--red-d);border:1px solid var(--red);display:none;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;flex-shrink:0;position:relative}
@@ -257,11 +262,9 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 <div id="app" style="display:none">
 <header>
   <div class="logo" onclick="showHome()">ROCKA<span>WIKI</span></div>
-  <div class="search-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="search" id="searchInput" placeholder="&#191;Qu&#233; necesitas saber?" oninput="onSearchInput(this.value)" autocomplete="off">
-    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Borrar">&#10005;</button>
-  </div>
+  <button class="header-search-btn" onclick="focusHeroSearch()" title="Buscar">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  </button>
   <button class="staff-btn" id="staffLoginBtn" onclick="showLoginModal()" title="Acceso staff">&#128274;</button>
   <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">
     <span id="userInitials">?</span>
@@ -284,6 +287,11 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
   <div class="home-hero">
     <h1>ROCKA<span>WIKI</span></h1>
     <p>Manual interno &middot; Protocolo &middot; Operaciones &middot; Equipo</p>
+  </div>
+  <div class="hero-search-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="&#191;Qu&#233; necesitas saber?" oninput="onSearchInput(this.value)" autocomplete="off" spellcheck="false">
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Borrar">&#10005;</button>
   </div>
   <div class="stats-row">
     <div class="stat"><div class="num" id="statArticles">-</div><div class="lbl">Articulos</div></div>
@@ -596,7 +604,7 @@ function showErr(id,msg){ var el=document.getElementById(id); el.textContent=msg
 function setNav(a){ ['navHome','navIndex','navGloss'].forEach(function(id){document.getElementById(id).classList.remove('active')}); if(a)document.getElementById(a).classList.add('active'); }
 function hideAll(){ ['homeView','articleView','indexView','glossaryView','editorView','importView','searchResults'].forEach(function(id){document.getElementById(id).style.display='none'}); }
 function show(id){ document.getElementById(id).style.display='block'; }
-function showHome(){ hideAll(); show('homeView'); setNav('navHome'); clearSearch(); renderHome(); }
+function showHome(){ document.getElementById('searchInput').value=''; document.getElementById('searchClear').style.display='none'; hideAll(); show('homeView'); setNav('navHome'); renderHome(); }
 function showIndex(){ hideAll(); show('indexView'); setNav('navIndex'); clearSearch(); renderIndex(); }
 function showGlossary(){ hideAll(); show('glossaryView'); setNav('navGloss'); clearSearch(); renderGlossary(); }
 function showImport(){ if(!isAdmin()){ showToast('Solo el admin puede importar'); return; } hideAll(); show('importView'); setNav(null); document.getElementById('importPreview').style.display='none'; }
@@ -1064,7 +1072,7 @@ async function importGlossCSV(){
 // ══ SEARCH ══
 function doSearch(q){
   q = q.trim().toLowerCase();
-  if(!q){ clearSearch(); showHome(); return; }
+  if(!q){ hideAll(); show('homeView'); setNav('navHome'); return; }
   hideAll(); show('searchResults'); setNav(null);
   var res = articlesCache.filter(function(a){
     return (a.title+' '+a.section+' '+(a.tags||[]).join(' ')+' '+a.body).toLowerCase().includes(q);
@@ -1092,14 +1100,23 @@ function resultCard(art,q){
     +'</div>';
 }
 
+function focusHeroSearch(){
+  showHome();
+  setTimeout(function(){ document.getElementById('searchInput').focus(); }, 50);
+}
 function onSearchInput(val){
-  doSearch(val);
   document.getElementById('searchClear').style.display = val ? 'block' : 'none';
+  doSearch(val);
 }
 function clearSearch(){
-  document.getElementById('searchInput').value='';
-  document.getElementById('searchClear').style.display='none';
-  showHome();
+  var inp = document.getElementById('searchInput');
+  if(inp) inp.value='';
+  var clr = document.getElementById('searchClear');
+  if(clr) clr.style.display='none';
+  hideAll();
+  show('homeView');
+  setNav('navHome');
+  renderHome();
 }
 
 // ══ EXPORT MAP (admin only) ══
