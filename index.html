@@ -94,6 +94,36 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 .ri-title{font-size:14px;flex:1;transition:color .15s}
 .ri-badge{font-size:12px;color:var(--grey)}
 /* BADGES */
+
+.badge-issue{display:inline-flex;align-items:center;gap:4px;background:#2a0a00;border:1px solid #ff6600;border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#ff8844;text-transform:uppercase;letter-spacing:1px}
+.badge-resolved{display:inline-flex;align-items:center;gap:4px;background:#0a1a2a;border:1px solid #4499ff;border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4499ff;text-transform:uppercase;letter-spacing:1px}
+.issue-banner{background:#1a0800;border:1px solid #ff6600;border-left:4px solid #ff6600;border-radius:4px;padding:12px 14px;margin-bottom:16px;font-size:14px;color:#ffaa77}
+.issue-banner strong{color:#ff8844;display:block;margin-bottom:4px}
+.btn-flag{display:inline-flex;align-items:center;gap:6px;background:#2a0a00;color:#ff8844;border:1px solid #ff6600;border-radius:4px;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:background .15s;text-transform:uppercase;letter-spacing:1px}
+.btn-flag:hover{background:#3a1000}
+.btn-resolve{display:inline-flex;align-items:center;gap:6px;background:#0a1a2a;color:#4499ff;border:1px solid #4499ff;border-radius:4px;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:background .15s;text-transform:uppercase;letter-spacing:1px}
+.btn-resolve:hover{background:#0f2540}
+.comments-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;margin-top:14px}
+.comments-title{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--grey);margin-bottom:10px}
+.comment-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.comment-item:last-child{border-bottom:none}
+.comment-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--grey);margin-bottom:4px}
+.comment-meta strong{color:var(--amber)}
+.comment-text{font-size:13px;color:#ccc;line-height:1.6}
+.comment-form{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.comment-input{background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s;width:100%}
+.comment-input:focus{border-color:var(--red)}
+.comment-submit{background:var(--red);color:var(--white);border:none;border-radius:4px;padding:8px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;align-self:flex-end;transition:background .15s}
+.comment-submit:hover{background:var(--red-b)}
+.accounting-view{padding-top:20px}
+.accounting-locked{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:16px}
+.accounting-locked-icon{font-size:48px}
+.accounting-locked h2{font-family:'Bebas Neue',cursive;font-size:28px;letter-spacing:3px;color:var(--grey)}
+.accounting-locked p{font-size:13px;color:var(--grey2);max-width:280px;line-height:1.7}
+.accounting-header{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:3px;border-bottom:2px solid var(--red);padding-bottom:8px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.accounting-header span{font-size:14px;font-family:'IBM Plex Mono',monospace;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-left:4px}
+.accounting-empty{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:32px;text-align:center;color:var(--grey);font-size:13px;line-height:1.8}
+
 .badge-verified{display:inline-flex;align-items:center;gap:4px;background:#0a2a15;border:1px solid var(--green);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px}
 .badge-pending{display:inline-flex;align-items:center;gap:4px;background:#2a2000;border:1px solid var(--amber);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:1px}
 /* HISTORY BOX — internal, staff only */
@@ -332,38 +362,10 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
   <div class="spacer"></div>
 </div>
 
-<div id="glossaryView" class="container">
-  <div class="gloss-toolbar">
-    <div class="gloss-toolbar-title">GLOSARIO</div>
-    <button class="btn-select" id="btnGlossAdd" style="display:none" onclick="openGlossEditor()">+ Nuevo termino</button>
-    <button class="import-btn" id="btnGlossImport" style="display:none;width:auto;margin:0" onclick="showGlossImport()">&#128229; CSV</button>
-  </div>
-  <div class="gloss-editor" id="glossEditor">
-    <h3 id="glossEditorTitle">NUEVO TERMINO</h3>
-    <input type="hidden" id="glossEditIdx">
-    <div class="field"><label>Termino</label><input type="text" id="glossTerm" placeholder="Ej: APPCC"></div>
-    <div class="field"><label>Definicion</label><textarea id="glossDef" placeholder="Definicion del termino..." style="min-height:80px;resize:vertical"></textarea></div>
-    <div class="editor-actions" style="margin-top:0">
-      <button class="btn-cancel" onclick="closeGlossEditor()">Cancelar</button>
-      <button class="btn-save" onclick="saveGlossTerm()">Guardar</button>
-    </div>
-  </div>
-  <div class="field" style="margin-bottom:12px">
-    <input type="text" class="gloss-search" id="glossSearch" placeholder="Filtrar terminos..." oninput="renderGlossary()">
-  </div>
-  <div id="glossaryContent"></div>
-  <div id="glossImportWrap" style="display:none;margin-top:16px">
-    <div class="field"><label>CSV de terminos (columnas: term;definition)</label>
-      <input type="file" id="glossCsvFile" accept=".csv,.txt" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--white);padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;width:100%">
-    </div>
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button class="btn-cancel" onclick="document.getElementById('glossImportWrap').style.display='none'">Cancelar</button>
-      <button class="btn-save" onclick="importGlossCSV()">Importar</button>
-    </div>
-  </div>
+<div id="accountingView" class="container" style="display:none">
+  <div id="accountingContent"></div>
   <div class="spacer"></div>
 </div>
-
 <div id="editorView" class="container">
   <div class="editor-header" id="editorTitle">NUEVA PAGINA</div>
   <div class="editor-form">
@@ -424,8 +426,8 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
   <button class="nav-btn" id="navIndex" onclick="showIndex()">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Indice
   </button>
-  <button class="nav-btn" id="navGloss" onclick="showGlossary()">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Glosario
+  <button class="nav-btn" id="navAccounting" onclick="showAccounting()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Contab.
   </button>
 </nav>
 </div>
@@ -452,6 +454,17 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
   </div>
 </div>
 
+<div class="modal-overlay" id="flagModal">
+  <div class="modal" style="border-top-color:#ff6600">
+    <h3>&#9888; Reportar problema</h3>
+    <p>Describe el problema encontrado. Sera visible para el equipo interno.</p>
+    <textarea class="comment-input" id="flagNote" placeholder="Describe el error o informacion desactualizada..." style="margin-bottom:16px"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" style="flex:1;background:#cc4400" onclick="confirmFlag()">Reportar</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -476,9 +489,7 @@ var STAFF_ROLES = {
   'gonzalo@rockawiki.com': 'reviewer',
   'rafa@rockawiki.com': 'reviewer',
   'charly@rockawiki.com': 'reviewer',
-  'andresriverock@gmail.com': 'reviewer',
-  'dulce@rockawiki.com': 'reviewer',
-  'yurena@rockawiki.com': 'reviewer',
+  'andres@rockawiki.com': 'reviewer'
 };
 
 var STAFF_NAMES = {
@@ -486,25 +497,10 @@ var STAFF_NAMES = {
   'gonzalo@rockawiki.com': 'Gonzalo',
   'rafa@rockawiki.com': 'Rafa',
   'charly@rockawiki.com': 'Charly',
-  'andresriverock@gmail.com': 'Andres',
-  'dulce@rockawiki.com': 'Dulce',
-  'yurena@rockawiki.com': 'Yurena'
-  
+  'andres@rockawiki.com': 'Andres'
 };
 
-var GLS = [
-  {term:'APPCC',def:'Analisis de Peligros y Puntos Criticos de Control. Sistema obligatorio de autocontrol en seguridad alimentaria.'},
-  {term:'Alergeno',def:'Sustancia que puede causar reaccion alergica. En restauracion, hay 14 de declaracion obligatoria segun Reglamento UE 1169/2011.'},
-  {term:'Briefing',def:'Reunion breve de equipo antes del servicio para comunicar novedades del dia y asignacion de tareas.'},
-  {term:'Camara frigorifica',def:'Espacio refrigerado para conservacion de alimentos entre 0 y 4 grados C.'},
-  {term:'Comanda',def:'Registro en el TPV donde se anotan los pedidos de los clientes.'},
-  {term:'Contaminacion cruzada',def:'Transferencia de alergenos o microorganismos entre alimentos por contacto o utensilios compartidos.'},
-  {term:'Fondo de caja',def:'Cantidad de efectivo inicial en caja cada turno para dar cambio. En RockaWiki: 150 euros.'},
-  {term:'Mise en place',def:'Preparacion y organizacion de todos los ingredientes y utensilios antes del servicio.'},
-  {term:'No conformidad',def:'Registro formal de un incidente o desviacion de los estandares operativos.'},
-  {term:'TPV',def:'Terminal Punto de Venta. Sistema informatico de caja y comandas.'},
-  {term:'Zona de peligro',def:'Rango de temperatura entre 8 y 65 grados C donde los microorganismos se multiplican rapidamente.'}
-];
+var GLS = [];
 
 var ICONS = {'Apertura y Cierre':'&#128273;','Atencion al Cliente':'&#129309;','Cocina y Protocolo':'&#127859;','Higiene y Seguridad':'&#129528;','Gestion de Personal':'&#128101;','Emergencias':'&#128680;'};
 
@@ -533,7 +529,6 @@ async function init(){
     else { currentUser=null; currentProfile=null; showPublicMode(); }
   });
   await loadArticles();
-  await loadGlossary();
   overlay.style.display = 'none';
   document.getElementById('app').style.display = 'block';
   if(currentProfile) launchApp(); else showPublicMode();
@@ -611,8 +606,8 @@ document.addEventListener('click', function(e){
 function showErr(id,msg){ var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; setTimeout(function(){el.style.display='none'},4000); }
 
 // ══ NAV ══
-function setNav(a){ ['navHome','navIndex','navGloss'].forEach(function(id){document.getElementById(id).classList.remove('active')}); if(a)document.getElementById(a).classList.add('active'); }
-function hideAll(){ ['homeView','articleView','indexView','glossaryView','editorView','importView','searchResults'].forEach(function(id){document.getElementById(id).style.display='none'}); }
+function setNav(a){ ['navHome','navIndex','navAccounting'].forEach(function(id){document.getElementById(id).classList.remove('active')}); if(a)document.getElementById(a).classList.add('active'); }
+function hideAll(){ ['homeView','articleView','indexView','accountingView','editorView','importView','searchResults'].forEach(function(id){document.getElementById(id).style.display='none'}); }
 function show(id){ document.getElementById(id).style.display='block'; }
 function showHome(){
   var si=document.getElementById('searchInput'); if(si) si.value='';
@@ -629,7 +624,7 @@ function filterSection(sec){
   var arts = articlesCache.filter(function(a){ return a.section===sec; });
   document.getElementById('homeView').style.display='none';
   document.getElementById('indexView').style.display='none';
-  document.getElementById('glossaryView').style.display='none';
+  
   document.getElementById('articleView').style.display='none';
   document.getElementById('editorView').style.display='none';
   document.getElementById('importView').style.display='none';
@@ -716,11 +711,13 @@ function showArticle(id){
     '<div class="breadcrumb"><a onclick="showHome()">Inicio</a><span>&#8250;</span><span>'+art.section+'</span><span>&#8250;</span><span>'+art.title+'</span></div>'
     +'<div class="article-title">'+art.title+'</div>'
     +'<div class="article-meta-bar">'+vbadge+'<span class="article-meta-text">Actualizado: <span>'+fmtDate(art.updated_at)+'</span></span></div>'
+    +issueBanner
     +actions
     +'<div class="article-content">'+art.body+'</div>'
     +'<div class="tag-list">'+tags+'</div>'
     +(related?'<div class="related-articles"><div class="related-title">VER TAMBIEN</div><div class="related-grid">'+related+'</div></div>':'')
     +historyHtml
+    +(isLoggedIn() ? buildCommentsHtml(art) : '')
     +'<div class="spacer"></div>';
 }
 
@@ -731,7 +728,7 @@ function filterByTag(tag){
   var arts = articlesCache.filter(function(a){ return (a.tags||[]).indexOf(tag)!==-1; });
   document.getElementById('homeView').style.display='none';
   document.getElementById('indexView').style.display='none';
-  document.getElementById('glossaryView').style.display='none';
+  
   document.getElementById('articleView').style.display='none';
   document.getElementById('editorView').style.display='none';
   document.getElementById('importView').style.display='none';
@@ -762,6 +759,7 @@ async function confirmDelete(){
 function closeModal(){
   document.getElementById('verifyModal').classList.remove('open');
   document.getElementById('deleteModal').classList.remove('open');
+  document.getElementById('flagModal').classList.remove('open');
 }
 
 // ══ EDITOR ══
@@ -979,123 +977,15 @@ function renderIndex(){
 }
 
 // ══ GLOSSARY ══
-var glossaryCache = [];
+var glossaryCache = []; function loadGlossary(){} function renderGlossary(){} function openGlossEditor(){} function closeGlossEditor(){} function saveGlossTerm(){} function deleteGlossTerm(){} function showGlossImport(){} function importGlossCSV(){}
 
-async function loadGlossary(){
-  if(!sb) return;
-  var res = await sb.from('glossary').select('*').order('term', {ascending:true});
-  if(res.data && res.data.length) {
-    glossaryCache = res.data;
-  } else {
-    // fallback to hardcoded GLS if table empty or doesn't exist yet
-    glossaryCache = GLS.map(function(g,i){ return {id:i+1, term:g.term, definition:g.def}; });
-  }
-}
 
-function renderGlossary(){
-  var canEditGloss = currentProfile && (currentProfile.role==='admin'||currentProfile.role==='reviewer');
-  document.getElementById('btnGlossAdd').style.display = canEditGloss ? 'inline-block' : 'none';
-  document.getElementById('btnGlossImport').style.display = canEditGloss ? 'inline-flex' : 'none';
-  var q = (document.getElementById('glossSearch').value||'').toLowerCase();
-  var filtered = glossaryCache.filter(function(g){
-    return !q || g.term.toLowerCase().includes(q) || g.definition.toLowerCase().includes(q);
-  });
-  if(!filtered.length){
-    document.getElementById('glossaryContent').innerHTML = '<p style="color:var(--grey);font-size:13px;padding:12px 0">Sin resultados.</p>';
-    return;
-  }
-  document.getElementById('glossaryContent').innerHTML = filtered.map(function(g){
-    var actions = canEditGloss
-      ? '<div class="gloss-actions">'
-        +'<button class="gloss-btn" onclick="openGlossEditor('+JSON.stringify(g)+')">Editar</button>'
-        +'<button class="gloss-btn del" onclick="deleteGlossTerm('+g.id+',this)" data-term="'+g.term.replace(/"/g,"&quot;")+'">Borrar</button>'
-        +'</div>'
-      : '';
-    return '<div class="gloss-entry"><div class="gloss-entry-text"><div class="gloss-term">'+g.term+'</div><div class="gloss-def">'+g.definition+'</div></div>'+actions+'</div>';
-  }).join('');
-}
 
-function openGlossEditor(g){
-  var ed = document.getElementById('glossEditor');
-  ed.style.display = 'block';
-  if(g){
-    document.getElementById('glossEditorTitle').textContent = 'EDITAR TERMINO';
-    document.getElementById('glossEditIdx').value = g.id;
-    document.getElementById('glossTerm').value = g.term;
-    document.getElementById('glossDef').value = g.definition;
-  } else {
-    document.getElementById('glossEditorTitle').textContent = 'NUEVO TERMINO';
-    document.getElementById('glossEditIdx').value = '';
-    document.getElementById('glossTerm').value = '';
-    document.getElementById('glossDef').value = '';
-  }
-  document.getElementById('glossTerm').focus();
-}
 
-function closeGlossEditor(){
-  document.getElementById('glossEditor').style.display = 'none';
-}
 
-async function saveGlossTerm(){
-  var id = document.getElementById('glossEditIdx').value;
-  var term = document.getElementById('glossTerm').value.trim();
-  var definition = document.getElementById('glossDef').value.trim();
-  if(!term||!definition){ showToast('Rellena termino y definicion'); return; }
-  var res;
-  if(id){
-    res = await sb.from('glossary').update({term:term, definition:definition}).eq('id',id);
-  } else {
-    res = await sb.from('glossary').insert({term:term, definition:definition});
-  }
-  if(res.error){ showToast('Error: '+res.error.message); return; }
-  await loadGlossary();
-  closeGlossEditor();
-  renderGlossary();
-  showToast(id ? 'Termino actualizado' : 'Termino añadido');
-}
 
-async function deleteGlossTerm(id, el){
-  var term = el ? el.getAttribute('data-term') : '';
-  if(!confirm('Borrar el termino "'+term+'"?')) return;
-  var res = await sb.from('glossary').delete().eq('id',id);
-  if(res.error){ showToast('Error: '+res.error.message); return; }
-  await loadGlossary();
-  renderGlossary();
-  showToast('Termino eliminado');
-}
 
-function showGlossImport(){
-  var w = document.getElementById('glossImportWrap');
-  w.style.display = w.style.display==='none' ? 'block' : 'none';
-}
 
-async function importGlossCSV(){
-  var file = document.getElementById('glossCsvFile').files[0];
-  if(!file){ showToast('Selecciona un CSV'); return; }
-  var reader = new FileReader();
-  reader.onload = async function(e){
-    var lines = e.target.result.split('\n').map(function(l){return l.trim()}).filter(Boolean);
-    var rows = [];
-    // skip header if first line contains 'term'
-    var start = lines[0].toLowerCase().includes('term') ? 1 : 0;
-    for(var i=start;i<lines.length;i++){
-      var parts = lines[i].split(';');
-      if(parts.length>=2){
-        var term = parts[0].replace(/^"|"$/g,'').trim();
-        var def = parts.slice(1).join(';').replace(/^"|"$/g,'').trim();
-        if(term&&def) rows.push({term:term, definition:def});
-      }
-    }
-    if(!rows.length){ showToast('No se encontraron filas validas'); return; }
-    var res = await sb.from('glossary').upsert(rows, {onConflict:'term'});
-    if(res.error){ showToast('Error: '+res.error.message); return; }
-    await loadGlossary();
-    renderGlossary();
-    document.getElementById('glossImportWrap').style.display='none';
-    showToast(rows.length+' terminos importados');
-  };
-  reader.readAsText(file,'UTF-8');
-}
 
 // ══ SEARCH ══
 function doSearch(q){
@@ -1108,7 +998,7 @@ function doSearch(q){
   }
   document.getElementById('homeView').style.display='none';
   document.getElementById('indexView').style.display='none';
-  document.getElementById('glossaryView').style.display='none';
+  
   document.getElementById('articleView').style.display='none';
   document.getElementById('editorView').style.display='none';
   document.getElementById('importView').style.display='none';
@@ -1203,6 +1093,148 @@ function exportMap(){
 
 // ══ UTILS ══
 function fmtDate(iso){ if(!iso) return '-'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+
+// ── ISSUE SYSTEM ──
+var pendingFlagId = null;
+
+function openFlagModal(id){
+  if(!canVerify()){ showToast('Sin permisos'); return; }
+  pendingFlagId = id;
+  document.getElementById('flagModal').classList.add('open');
+}
+
+async function confirmFlag(){
+  var note = document.getElementById('flagNote').value.trim();
+  if(!note){ showToast('Escribe una descripcion del problema'); return; }
+  var now = new Date().toISOString();
+  // Save issue flag on article
+  var res = await sb.from('articles').update({
+    has_issue: true, issue_resolved: false,
+    issue_by: currentProfile.name, issue_date: now, issue_note: note
+  }).eq('id', pendingFlagId);
+  if(res.error){ showToast('Error: '+res.error.message); closeModal(); return; }
+  // Also save as a comment
+  await sb.from('comments').insert({
+    article_id: pendingFlagId,
+    author: currentProfile.name,
+    text: '[PROBLEMA REPORTADO] ' + note,
+    created_at: now
+  });
+  await loadArticles();
+  closeModal();
+  document.getElementById('flagNote').value = '';
+  showToast('Problema reportado');
+  showArticle(pendingFlagId);
+}
+
+async function resolveIssue(id){
+  var res = await sb.from('articles').update({
+    has_issue: true, issue_resolved: true
+  }).eq('id', id);
+  if(res.error){ showToast('Error: '+res.error.message); return; }
+  var now = new Date().toISOString();
+  await sb.from('comments').insert({
+    article_id: id, author: currentProfile.name,
+    text: '[PROBLEMA RESUELTO] Marcado como resuelto por '+currentProfile.name,
+    created_at: now
+  });
+  await loadArticles();
+  showToast('Problema marcado como resuelto');
+  showArticle(id);
+}
+
+// ── COMMENTS ──
+var commentsCache = {};
+
+async function loadComments(articleId){
+  if(!sb) return [];
+  var res = await sb.from('comments').select('*').eq('article_id', articleId).order('created_at', {ascending:true});
+  if(res.data) commentsCache[articleId] = res.data;
+  return commentsCache[articleId] || [];
+}
+
+function buildCommentsHtml(art){
+  var comments = commentsCache[art.id] || [];
+  var issueStatus = '';
+  if(art.has_issue){
+    var statusLabel = art.issue_resolved
+      ? '<span class="badge-resolved">&#10003; Resuelto</span>'
+      : '<span class="badge-issue">&#9888; Problema activo</span>';
+    issueStatus = '<div class="history-row" style="margin-top:6px"><span class="history-label">Problema</span><span class="history-val">'+statusLabel+' por '+(art.issue_by||'-')+' &middot; '+fmtDate(art.issue_date)+'</span></div>';
+  }
+  var commentsList = comments.length
+    ? comments.map(function(c){
+        var isFlag = c.text.indexOf('[PROBLEMA') === 0;
+        return '<div class="comment-item">'
+          +'<div class="comment-meta"><strong>'+(isFlag ? '&#9888; '+c.author : c.author)+'</strong> &middot; '+fmtDate(c.created_at)+'</div>'
+          +'<div class="comment-text">'+c.text+'</div>'
+          +'</div>';
+      }).join('')
+    : '<p style="color:var(--grey2);font-size:12px;font-family:IBM Plex Mono,monospace">Sin comentarios.</p>';
+
+  return '<div class="comments-box">'
+    +'<div class="comments-title">Comentarios internos (staff)</div>'
+    +issueStatus
+    +commentsList
+    +'<div class="comment-form">'
+    +'<textarea class="comment-input" id="commentInput-'+art.id+'" placeholder="Escribe un comentario..."></textarea>'
+    +'<button class="comment-submit" onclick="submitComment(\''+art.id+'\')">Enviar</button>'
+    +'</div></div>';
+}
+
+async function submitComment(articleId){
+  var inp = document.getElementById('commentInput-'+articleId);
+  var text = inp ? inp.value.trim() : '';
+  if(!text){ showToast('Escribe algo antes de enviar'); return; }
+  var now = new Date().toISOString();
+  var res = await sb.from('comments').insert({
+    article_id: articleId, author: currentProfile.name,
+    text: text, created_at: now
+  });
+  if(res.error){ showToast('Error: '+res.error.message); return; }
+  inp.value = '';
+  await loadComments(articleId);
+  showArticle(articleId);
+  showToast('Comentario enviado');
+}
+
+// Load comments when showing article
+var _origShowArticle = showArticle;
+showArticle = async function(id){
+  if(isLoggedIn()) await loadComments(id);
+  _origShowArticle(id);
+};
+
+// ── ACCOUNTING ──
+function showAccounting(){
+  if(!isLoggedIn()){
+    showToast('Seccion privada — accede con tu cuenta');
+    showLoginModal();
+    return;
+  }
+  if(currentProfile.role !== 'admin' && currentProfile.role !== 'reviewer'){
+    showToast('No tienes acceso a esta seccion');
+    return;
+  }
+  hideAll(); show('accountingView'); setNav('navAccounting');
+  renderAccounting();
+}
+
+function renderAccounting(){
+  document.getElementById('accountingContent').innerHTML =
+    '<div class="accounting-header">CONTABILIDAD <span>&#128274; Solo staff</span></div>'
+    +'<div class="accounting-empty">'
+    +'&#128202;<br><br>'
+    +'<strong style="color:var(--white);font-size:15px">Seccion en construccion</strong><br><br>'
+    +'Aqui apareceran los datos financieros: ventas por mes, por dia, por producto y por local.<br><br>'
+    +'Cuando tengas el formato de los datos en bruto, generaremos el prompt para convertirlos en CSV e importarlos aqui.'
+    +'</div>';
+}
+
+// ── REPLACE showGlossary calls ──
+function showGlossary(){ showAccounting(); }
+
+
 function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2500); }
 
 init();
