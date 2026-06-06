@@ -32,11 +32,13 @@ body{background:var(--bg);color:var(--white);font-family:'IBM Plex Sans',sans-se
 header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;height:52px}
 .logo{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:3px;cursor:pointer;flex-shrink:0}
 .logo span{color:var(--red-b)}
-.search-wrap{flex:1;display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0 10px;transition:border-color .2s}
-.search-wrap:focus-within{border-color:var(--red)}
-.search-wrap svg{color:var(--grey);flex-shrink:0}
-#searchInput{background:none;border:none;outline:none;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;width:100%;padding:8px}
-#searchInput::placeholder{color:var(--grey2)}
+.search-wrap{flex:1;display:flex;align-items:center;background:var(--bg3);border:2px solid var(--red-d);border-radius:6px;padding:0 12px;transition:border-color .2s;gap:6px}
+.search-wrap:focus-within{border-color:var(--red-b);box-shadow:0 0 0 2px rgba(204,34,0,.15)}
+.search-wrap svg{color:var(--grey);flex-shrink:0;width:18px;height:18px}
+#searchInput{background:none;border:none;outline:none;color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:14px;width:100%;padding:10px 0}
+#searchInput::placeholder{color:var(--grey2);font-style:italic}
+.search-clear{background:none;border:none;color:var(--grey2);font-size:16px;cursor:pointer;padding:0 2px;line-height:1;display:none;flex-shrink:0}
+.search-clear:hover{color:var(--white)}
 .staff-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);font-size:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
 .staff-btn:hover{border-color:var(--red);color:var(--red-b)}
 .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--red-d);border:1px solid var(--red);display:none;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;flex-shrink:0;position:relative}
@@ -158,9 +160,20 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 .index-link.selected{background:#2a0a0a;border-color:var(--red);color:var(--white)}
 .index-link.sel-mode:hover{border-color:var(--amber);color:var(--amber)}
 
-.gloss-entry{border-bottom:1px solid var(--border);padding:12px 0}
+.gloss-entry{border-bottom:1px solid var(--border);padding:12px 0;display:flex;align-items:flex-start;gap:10px}
+.gloss-entry-text{flex:1}
 .gloss-term{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--red-b);margin-bottom:4px}
 .gloss-def{font-size:13px;color:#bbb}
+.gloss-actions{display:flex;gap:6px;flex-shrink:0;padding-top:4px}
+.gloss-btn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--grey);font-size:11px;padding:3px 8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:border-color .15s,color .15s}
+.gloss-btn:hover{border-color:var(--red);color:var(--red)}
+.gloss-btn.del:hover{border-color:#ff6655;color:#ff6655}
+.gloss-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.gloss-toolbar-title{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:3px;flex:1;border-bottom:2px solid var(--red);padding-bottom:8px}
+.gloss-search{background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 12px;outline:none;width:100%;margin-bottom:12px;transition:border-color .2s}
+.gloss-search:focus{border-color:var(--red)}
+.gloss-editor{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:16px;margin-bottom:16px;display:none}
+.gloss-editor h3{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;margin-bottom:14px;color:var(--grey)}
 /* EDITOR */
 #editorView{padding-top:20px;display:none}
 .editor-header{font-family:'Bebas Neue',cursive;font-size:28px;letter-spacing:3px;border-bottom:2px solid var(--red);padding-bottom:8px;margin-bottom:20px}
@@ -245,8 +258,9 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 <header>
   <div class="logo" onclick="showHome()">ROCKA<span>WIKI</span></div>
   <div class="search-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="search" id="searchInput" placeholder="Buscar en el manual..." oninput="doSearch(this.value)" autocomplete="off">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="searchInput" placeholder="&#191;Qu&#233; necesitas saber?" oninput="onSearchInput(this.value)" autocomplete="off">
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Borrar">&#10005;</button>
   </div>
   <button class="staff-btn" id="staffLoginBtn" onclick="showLoginModal()" title="Acceso staff">&#128274;</button>
   <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">
@@ -306,8 +320,34 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 </div>
 
 <div id="glossaryView" class="container">
-  <div class="index-header">GLOSARIO</div>
+  <div class="gloss-toolbar">
+    <div class="gloss-toolbar-title">GLOSARIO</div>
+    <button class="btn-select" id="btnGlossAdd" style="display:none" onclick="openGlossEditor()">+ Nuevo termino</button>
+    <button class="import-btn" id="btnGlossImport" style="display:none;width:auto;margin:0" onclick="showGlossImport()">&#128229; CSV</button>
+  </div>
+  <div class="gloss-editor" id="glossEditor">
+    <h3 id="glossEditorTitle">NUEVO TERMINO</h3>
+    <input type="hidden" id="glossEditIdx">
+    <div class="field"><label>Termino</label><input type="text" id="glossTerm" placeholder="Ej: APPCC"></div>
+    <div class="field"><label>Definicion</label><textarea id="glossDef" placeholder="Definicion del termino..." style="min-height:80px;resize:vertical"></textarea></div>
+    <div class="editor-actions" style="margin-top:0">
+      <button class="btn-cancel" onclick="closeGlossEditor()">Cancelar</button>
+      <button class="btn-save" onclick="saveGlossTerm()">Guardar</button>
+    </div>
+  </div>
+  <div class="field" style="margin-bottom:12px">
+    <input type="text" class="gloss-search" id="glossSearch" placeholder="Filtrar terminos..." oninput="renderGlossary()">
+  </div>
   <div id="glossaryContent"></div>
+  <div id="glossImportWrap" style="display:none;margin-top:16px">
+    <div class="field"><label>CSV de terminos (columnas: term;definition)</label>
+      <input type="file" id="glossCsvFile" accept=".csv,.txt" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--white);padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;width:100%">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn-cancel" onclick="document.getElementById('glossImportWrap').style.display='none'">Cancelar</button>
+      <button class="btn-save" onclick="importGlossCSV()">Importar</button>
+    </div>
+  </div>
   <div class="spacer"></div>
 </div>
 
@@ -475,6 +515,7 @@ async function init(){
     else { currentUser=null; currentProfile=null; showPublicMode(); }
   });
   await loadArticles();
+  await loadGlossary();
   overlay.style.display = 'none';
   document.getElementById('app').style.display = 'block';
   if(currentProfile) launchApp(); else showPublicMode();
@@ -902,10 +943,121 @@ function renderIndex(){
 }
 
 // ══ GLOSSARY ══
+var glossaryCache = [];
+
+async function loadGlossary(){
+  if(!sb) return;
+  var res = await sb.from('glossary').select('*').order('term', {ascending:true});
+  if(res.data && res.data.length) {
+    glossaryCache = res.data;
+  } else {
+    // fallback to hardcoded GLS if table empty or doesn't exist yet
+    glossaryCache = GLS.map(function(g,i){ return {id:i+1, term:g.term, definition:g.def}; });
+  }
+}
+
 function renderGlossary(){
-  document.getElementById('glossaryContent').innerHTML =
-    GLS.map(function(g){ return '<div class="gloss-entry"><div class="gloss-term">'+g.term+'</div><div class="gloss-def">'+g.def+'</div></div>'; }).join('')
-    +'<div class="spacer"></div>';
+  var canEditGloss = currentProfile && (currentProfile.role==='admin'||currentProfile.role==='reviewer');
+  document.getElementById('btnGlossAdd').style.display = canEditGloss ? 'inline-block' : 'none';
+  document.getElementById('btnGlossImport').style.display = canEditGloss ? 'inline-flex' : 'none';
+  var q = (document.getElementById('glossSearch').value||'').toLowerCase();
+  var filtered = glossaryCache.filter(function(g){
+    return !q || g.term.toLowerCase().includes(q) || g.definition.toLowerCase().includes(q);
+  });
+  if(!filtered.length){
+    document.getElementById('glossaryContent').innerHTML = '<p style="color:var(--grey);font-size:13px;padding:12px 0">Sin resultados.</p>';
+    return;
+  }
+  document.getElementById('glossaryContent').innerHTML = filtered.map(function(g){
+    var actions = canEditGloss
+      ? '<div class="gloss-actions">'
+        +'<button class="gloss-btn" onclick="openGlossEditor('+JSON.stringify(g)+')">Editar</button>'
+        +'<button class="gloss-btn del" onclick="deleteGlossTerm('+g.id+',''+g.term.replace(/'/g,"\'")+'')" >Borrar</button>'
+        +'</div>'
+      : '';
+    return '<div class="gloss-entry"><div class="gloss-entry-text"><div class="gloss-term">'+g.term+'</div><div class="gloss-def">'+g.definition+'</div></div>'+actions+'</div>';
+  }).join('');
+}
+
+function openGlossEditor(g){
+  var ed = document.getElementById('glossEditor');
+  ed.style.display = 'block';
+  if(g){
+    document.getElementById('glossEditorTitle').textContent = 'EDITAR TERMINO';
+    document.getElementById('glossEditIdx').value = g.id;
+    document.getElementById('glossTerm').value = g.term;
+    document.getElementById('glossDef').value = g.definition;
+  } else {
+    document.getElementById('glossEditorTitle').textContent = 'NUEVO TERMINO';
+    document.getElementById('glossEditIdx').value = '';
+    document.getElementById('glossTerm').value = '';
+    document.getElementById('glossDef').value = '';
+  }
+  document.getElementById('glossTerm').focus();
+}
+
+function closeGlossEditor(){
+  document.getElementById('glossEditor').style.display = 'none';
+}
+
+async function saveGlossTerm(){
+  var id = document.getElementById('glossEditIdx').value;
+  var term = document.getElementById('glossTerm').value.trim();
+  var definition = document.getElementById('glossDef').value.trim();
+  if(!term||!definition){ showToast('Rellena termino y definicion'); return; }
+  var res;
+  if(id){
+    res = await sb.from('glossary').update({term:term, definition:definition}).eq('id',id);
+  } else {
+    res = await sb.from('glossary').insert({term:term, definition:definition});
+  }
+  if(res.error){ showToast('Error: '+res.error.message); return; }
+  await loadGlossary();
+  closeGlossEditor();
+  renderGlossary();
+  showToast(id ? 'Termino actualizado' : 'Termino añadido');
+}
+
+async function deleteGlossTerm(id, term){
+  if(!confirm('Borrar el termino "'+term+'"?')) return;
+  var res = await sb.from('glossary').delete().eq('id',id);
+  if(res.error){ showToast('Error: '+res.error.message); return; }
+  await loadGlossary();
+  renderGlossary();
+  showToast('Termino eliminado');
+}
+
+function showGlossImport(){
+  var w = document.getElementById('glossImportWrap');
+  w.style.display = w.style.display==='none' ? 'block' : 'none';
+}
+
+async function importGlossCSV(){
+  var file = document.getElementById('glossCsvFile').files[0];
+  if(!file){ showToast('Selecciona un CSV'); return; }
+  var reader = new FileReader();
+  reader.onload = async function(e){
+    var lines = e.target.result.split('\n').map(function(l){return l.trim()}).filter(Boolean);
+    var rows = [];
+    // skip header if first line contains 'term'
+    var start = lines[0].toLowerCase().includes('term') ? 1 : 0;
+    for(var i=start;i<lines.length;i++){
+      var parts = lines[i].split(';');
+      if(parts.length>=2){
+        var term = parts[0].replace(/^"|"$/g,'').trim();
+        var def = parts.slice(1).join(';').replace(/^"|"$/g,'').trim();
+        if(term&&def) rows.push({term:term, definition:def});
+      }
+    }
+    if(!rows.length){ showToast('No se encontraron filas validas'); return; }
+    var res = await sb.from('glossary').upsert(rows, {onConflict:'term'});
+    if(res.error){ showToast('Error: '+res.error.message); return; }
+    await loadGlossary();
+    renderGlossary();
+    document.getElementById('glossImportWrap').style.display='none';
+    showToast(rows.length+' terminos importados');
+  };
+  reader.readAsText(file,'UTF-8');
 }
 
 // ══ SEARCH ══
@@ -939,7 +1091,15 @@ function resultCard(art,q){
     +'</div>';
 }
 
-function clearSearch(){ document.getElementById('searchInput').value=''; }
+function onSearchInput(val){
+  doSearch(val);
+  document.getElementById('searchClear').style.display = val ? 'block' : 'none';
+}
+function clearSearch(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchClear').style.display='none';
+  showHome();
+}
 
 // ══ EXPORT MAP (admin only) ══
 function exportMap(){
