@@ -1612,24 +1612,30 @@ var inboxData = { problems: [], comments: [] };
 
 async function loadInboxData(){
   if(!sb || !isAdmin()) return;
+  try {
+    // Load articles with open issues
+    var issRes = await sb.from('articles')
+      .select('id,title,section,has_issue,issue_resolved,issue_by,issue_date,issue_note')
+      .eq('has_issue', true)
+      .eq('issue_resolved', false)
+      .order('issue_date', {ascending:false});
+    inboxData.problems = issRes.error ? [] : (issRes.data || []);
 
-  // Load articles with open issues
-  var issRes = await sb.from('articles')
-    .select('id,title,section,has_issue,issue_resolved,issue_by,issue_date,issue_note')
-    .eq('has_issue', true)
-    .eq('issue_resolved', false)
-    .order('issue_date', {ascending:false});
-  inboxData.problems = issRes.data || [];
+    // Load unresolved non-report comments (NULLs treated as false)
+    var comRes = await sb.from('comments')
+      .select('id,article_id,author,text,created_at,resolved,is_report')
+      .or('resolved.eq.false,resolved.is.null')
+      .or('is_report.eq.false,is_report.is.null')
+      .order('created_at', {ascending:false});
+    inboxData.comments = comRes.error ? [] : (comRes.data || []);
 
-  // Load unresolved comments — exclude auto-generated system messages
-  var comRes = await sb.from('comments')
-    .select('id,article_id,author,text,created_at,resolved,is_report')
-    .eq('resolved', false)
-    .eq('is_report', false)
-    .order('created_at', {ascending:false});
-  inboxData.comments = comRes.data || [];
-
-  updateBadge();
+    updateBadge();
+  } catch(e) {
+    console.error('loadInboxData error:', e);
+    inboxData.problems = [];
+    inboxData.comments = [];
+    updateBadge();
+  }
 }
 
 function updateBadge(){
