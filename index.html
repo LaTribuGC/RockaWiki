@@ -1485,6 +1485,7 @@ async function resolveIssue(id){
     .eq('resolved', false);
   await loadArticles();
   await loadComments(id);
+  if(isAdmin()) await loadInboxData();
   showToast('Problema resuelto');
   showArticle(id);
 }
@@ -1617,16 +1618,15 @@ async function loadInboxData(){
     .select('id,title,section,has_issue,issue_resolved,issue_by,issue_date,issue_note')
     .eq('has_issue', true)
     .eq('issue_resolved', false)
-    .order('issue_date', {ascending: false});
+    .order('issue_date', {ascending:false});
   inboxData.problems = issRes.data || [];
 
-  // Load unresolved comments (non-system)
+  // Load unresolved comments — exclude auto-generated system messages
   var comRes = await sb.from('comments')
-    .select('id,article_id,author,text,created_at,resolved')
+    .select('id,article_id,author,text,created_at,resolved,is_report')
     .eq('resolved', false)
-    .not('text', 'like', '[PROBLEMA%')
-    .not('text', 'like', '[RESUELTO%')
-    .order('created_at', {ascending: false});
+    .eq('is_report', false)
+    .order('created_at', {ascending:false});
   inboxData.comments = comRes.data || [];
 
   updateBadge();
@@ -1649,10 +1649,12 @@ function updateBadge(){
   }
 }
 
-function showInbox(){
+async function showInbox(){
   if(!isAdmin()){ showToast('Solo el admin puede ver la bandeja'); return; }
   hideAll(); show('inboxView'); setNav(null);
-  loadInboxData().then(function(){ renderInbox(); });
+  document.getElementById('inboxContent').innerHTML = '<div style="color:var(--grey);font-size:13px;padding:20px 0;text-align:center;font-family:IBM Plex Mono,monospace">Cargando...</div>';
+  await loadInboxData();
+  renderInbox();
 }
 
 
@@ -1706,18 +1708,7 @@ function renderInbox(){
 }
 
 // Reload inbox after resolving issues/comments
-var _origResolveIssue = resolveIssue;
-resolveIssue = async function(id){
-  await _origResolveIssue(id);
-  await loadInboxData();
-  updateBadge();
-};
-var _origResolveComment = resolveComment;
-resolveComment = async function(commentId, articleId){
-  await _origResolveComment(commentId, articleId);
-  await loadInboxData();
-  updateBadge();
-};
+// resolve overrides removed — updateBadge called inside resolveIssue/resolveComment directly
 
 
 // ── USERS MANAGEMENT ──
