@@ -36,6 +36,8 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 .header-search-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--grey);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:1;max-width:36px;transition:border-color .15s,color .15s;flex-shrink:0}
 .header-search-btn:hover{border-color:var(--red);color:var(--red-b)}
 .header-search-btn svg{width:18px;height:18px}
+.persistent-search{background:var(--bg);padding:14px 16px 0;max-width:860px;margin:0 auto;width:100%}
+.persistent-search{background:var(--bg);padding:16px 16px 0;max-width:860px;margin:0 auto;width:100%}
 .hero-search-wrap{display:flex;align-items:center;background:var(--bg2);border:2px solid var(--red);border-radius:10px;padding:0 16px;margin-bottom:24px;gap:10px;transition:box-shadow .2s}
 .hero-search-wrap:focus-within{box-shadow:0 0 0 3px rgba(204,34,0,.2);border-color:var(--red-b)}
 .hero-search-wrap svg{color:var(--grey);flex-shrink:0;width:22px;height:22px}
@@ -59,7 +61,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 /* LAYOUT */
 .container{max-width:860px;margin:0 auto;padding:0 16px}
 /* SEARCH */
-#searchResults{display:none;padding:16px 16px 24px;max-width:860px;margin:0 auto}
+#searchResults{display:none;padding:8px 16px 24px;max-width:860px;margin:0 auto}
 #searchResults h2{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;color:var(--grey);margin-bottom:12px}
 #searchResults h2 span{color:var(--white)}
 .search-result-item{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s}
@@ -260,6 +262,9 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 </div>
 
 <div id="app" style="display:none">
+<div class="persistent-search" id="persistentSearch">
+
+</div>
 <header>
   <div class="logo" onclick="showHome()">ROCKA<span>WIKI</span></div>
   <button class="header-search-btn" onclick="focusHeroSearch()" title="Buscar">
@@ -288,11 +293,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
     <h1>ROCKA<span>WIKI</span></h1>
     <p>Manual interno &middot; Protocolo &middot; Operaciones &middot; Equipo</p>
   </div>
-  <div class="hero-search-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="&#191;Qu&#233; necesitas saber?" oninput="onSearchInput(this.value)" autocomplete="off" spellcheck="false">
-    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Borrar">&#10005;</button>
-  </div>
+
   <div class="stats-row">
     <div class="stat"><div class="num" id="statArticles">-</div><div class="lbl">Articulos</div></div>
     <div class="stat"><div class="num">6</div><div class="lbl">Secciones</div></div>
@@ -604,14 +605,21 @@ function showErr(id,msg){ var el=document.getElementById(id); el.textContent=msg
 function setNav(a){ ['navHome','navIndex','navGloss'].forEach(function(id){document.getElementById(id).classList.remove('active')}); if(a)document.getElementById(a).classList.add('active'); }
 function hideAll(){ ['homeView','articleView','indexView','glossaryView','editorView','importView','searchResults'].forEach(function(id){document.getElementById(id).style.display='none'}); }
 function show(id){ document.getElementById(id).style.display='block'; }
-function showHome(){ document.getElementById('searchInput').value=''; document.getElementById('searchClear').style.display='none'; hideAll(); show('homeView'); setNav('navHome'); renderHome(); }
+function showHome(){ document.getElementById('searchInput').value=''; document.getElementById('searchClear').style.display='none'; document.getElementById('searchResults').style.display='none'; hideAll(); show('homeView'); setNav('navHome'); renderHome(); }
 function showIndex(){ hideAll(); show('indexView'); setNav('navIndex'); clearSearch(); renderIndex(); }
 function showGlossary(){ hideAll(); show('glossaryView'); setNav('navGloss'); clearSearch(); renderGlossary(); }
 function showImport(){ if(!isAdmin()){ showToast('Solo el admin puede importar'); return; } hideAll(); show('importView'); setNav(null); document.getElementById('importPreview').style.display='none'; }
 
 function filterSection(sec){
+  document.getElementById('searchResults').style.display='none';
   var arts = articlesCache.filter(function(a){ return a.section===sec; });
-  hideAll(); show('searchResults'); setNav(null);
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('indexView').style.display='none';
+  document.getElementById('glossaryView').style.display='none';
+  document.getElementById('articleView').style.display='none';
+  document.getElementById('editorView').style.display='none';
+  document.getElementById('importView').style.display='none';
+  show('searchResults'); setNav(null);
   document.getElementById('searchResults').innerHTML =
     '<h2>SECCION: <span>'+sec+'</span></h2>' + arts.map(function(a){ return resultCard(a,''); }).join('') + '<div class="spacer"></div>';
 }
@@ -707,7 +715,13 @@ function isLoggedIn(){ return currentProfile !== null; }
 // ══ TAG FILTER ══
 function filterByTag(tag){
   var arts = articlesCache.filter(function(a){ return (a.tags||[]).indexOf(tag)!==-1; });
-  hideAll(); show('searchResults'); setNav(null);
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('indexView').style.display='none';
+  document.getElementById('glossaryView').style.display='none';
+  document.getElementById('articleView').style.display='none';
+  document.getElementById('editorView').style.display='none';
+  document.getElementById('importView').style.display='none';
+  show('searchResults'); setNav(null);
   document.getElementById('searchResults').innerHTML =
     '<h2>ETIQUETA: <span>#'+tag+'</span></h2>' + arts.map(function(a){ return resultCard(a,''); }).join('') + '<div class="spacer"></div>';
 }
@@ -1072,8 +1086,19 @@ async function importGlossCSV(){
 // ══ SEARCH ══
 function doSearch(q){
   q = q.trim().toLowerCase();
-  if(!q){ hideAll(); show('homeView'); setNav('navHome'); return; }
-  hideAll(); show('searchResults'); setNav(null);
+  if(!q){
+    document.getElementById('searchResults').style.display='none';
+    show('homeView');
+    setNav('navHome');
+    return;
+  }
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('indexView').style.display='none';
+  document.getElementById('glossaryView').style.display='none';
+  document.getElementById('articleView').style.display='none';
+  document.getElementById('editorView').style.display='none';
+  document.getElementById('importView').style.display='none';
+  show('searchResults'); setNav(null);
   var res = articlesCache.filter(function(a){
     return (a.title+' '+a.section+' '+(a.tags||[]).join(' ')+' '+a.body).toLowerCase().includes(q);
   });
@@ -1109,14 +1134,10 @@ function onSearchInput(val){
   doSearch(val);
 }
 function clearSearch(){
-  var inp = document.getElementById('searchInput');
-  if(inp) inp.value='';
-  var clr = document.getElementById('searchClear');
-  if(clr) clr.style.display='none';
-  hideAll();
-  show('homeView');
-  setNav('navHome');
-  renderHome();
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchClear').style.display='none';
+  document.getElementById('searchResults').style.display='none';
+  hideAll(); show('homeView'); setNav('navHome'); renderHome();
 }
 
 // ══ EXPORT MAP (admin only) ══
