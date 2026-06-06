@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RockaWiki</title>
+<title>La TribuWiki</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -313,7 +313,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 <body>
 
 <div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-logo">ROCKA<span>WIKI</span></div>
+  <div class="loading-logo">LA TRIBU<span>WIKI</span></div>
   <div class="loading-bar"><div class="loading-bar-inner"></div></div>
   <div class="loading-text">Cargando...</div>
 </div>
@@ -325,7 +325,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 </div>
 
 <div id="loginScreen">
-  <div class="login-logo">ROCKA<span>WIKI</span></div>
+  <div class="login-logo">LA TRIBU<span>WIKI</span></div>
   <div class="login-sub">Acceso staff</div>
   <div class="login-box">
     <button class="close-btn" onclick="hideLoginModal()">&#10005;</button>
@@ -339,7 +339,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 
 <div id="app" style="display:none">
 <header>
-  <div class="logo" onclick="showHome()">ROCKA<span>WIKI</span></div>
+  <div class="logo" onclick="showHome()">LA TRIBU<span>WIKI</span></div>
   <button class="header-search-btn" onclick="focusHeroSearch()" title="Buscar">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   </button>
@@ -373,7 +373,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 
 <div id="homeView" class="container">
   <div class="home-hero">
-    <h1>ROCKA<span>WIKI</span></h1>
+    <h1>LA TRIBU<span>WIKI</span></h1>
     <p>Manual interno &middot; Protocolo &middot; Operaciones &middot; Equipo</p>
   </div>
 
@@ -545,7 +545,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 <div class="modal-overlay" id="inviteSuccessModal">
   <div class="modal" style="border-top-color:var(--green)">
     <h3>&#10003; Perfil creado</h3>
-    <p>El perfil de <strong id="inviteSuccessName"></strong> ha sido creado en RockaWiki.</p>
+    <p>El perfil de <strong id="inviteSuccessName"></strong> ha sido creado en La TribuWiki.</p>
     <p style="margin-top:8px">Ahora ve a <strong>Supabase &rarr; Authentication &rarr; Users &rarr; Add user</strong> y crea la cuenta con el email:</p>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin:12px 0;font-family:IBM Plex Mono,monospace;font-size:13px;color:var(--white)" id="inviteSuccessEmail"></div>
     <p style="font-size:12px;color:var(--grey2)">Pon la contrasena que quieras y comunicasela al usuario.</p>
@@ -1159,7 +1159,7 @@ function exportMap(){
   var ds = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
   var L = [];
   var hr = '======================================';
-  L.push('ROCKAWIKI - MAPA DE CONTENIDOS'); L.push('Exportado: '+ds); L.push('');
+  L.push('LA TRIBUWIKI - MAPA DE CONTENIDOS'); L.push('Exportado: '+ds); L.push('');
   L.push(hr); L.push('ARTICULOS ('+arts.length+')'); L.push(hr);
   arts.forEach(function(a){
     var linked=[];
@@ -1185,7 +1185,7 @@ function exportMap(){
   L.push(''); L.push(hr); L.push('PROMPT PARA NUEVO ARTICULO'); L.push(hr);
   L.push('Pega esto junto al articulo a convertir:'); L.push('');
   L.push('---');
-  L.push('Te adjunto el mapa de RockaWiki. Usalo para generar hipervinculos correctos.');
+  L.push('Te adjunto el mapa de La TribuWiki. Usalo para generar hipervinculos correctos.');
   L.push('Los ids entre corchetes van dentro de showArticle(id).');
   L.push('Si el articulo menciona algo sin pagina propia, indicalo como articulo sugerido.');
   L.push('---');
@@ -1193,7 +1193,7 @@ function exportMap(){
   var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
   var url=URL.createObjectURL(blob);
   var el=document.createElement('a');
-  el.href=url; el.download='rockawiki-mapa-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.txt';
+  el.href=url; el.download='latribuwiki-mapa-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.txt';
   document.body.appendChild(el); el.click(); document.body.removeChild(el); URL.revokeObjectURL(url);
   showToast('Mapa exportado');
 }
@@ -1507,7 +1507,7 @@ async function changeRole(profileId, newRole){
 }
 
 async function removeUser(profileId, name){
-  if(!confirm('Eliminar a '+name+' de RockaWiki? Perdera el acceso inmediatamente.')) return;
+  if(!confirm('Eliminar a '+name+' de La TribuWiki? Perdera el acceso inmediatamente.')) return;
   var res = await sb.from('profiles').delete().eq('id',profileId);
   if(res.error){ showToast('Error: '+res.error.message); return; }
   await loadProfiles();
@@ -1526,7 +1526,7 @@ async function inviteUser(){
 
   // Step 1: check if profile already exists
   var existing = await sb.from('profiles').select('id').eq('email',email).maybeSingle();
-  if(existing.data){ showToast('Este email ya tiene perfil en RockaWiki'); btn.disabled=false; btn.textContent='Enviar invitacion'; return; }
+  if(existing.data){ showToast('Este email ya tiene perfil en La TribuWiki'); btn.disabled=false; btn.textContent='Enviar invitacion'; return; }
 
   // Step 2: insert profile — the SQL trigger will sync the auth.users id automatically
   // We use a temp UUID; the trigger replaces it when user first logs in
