@@ -1436,7 +1436,7 @@ function exportMap(){
 }
 
 // ══ UTILS ══
-function fmtDate(iso){ if(!iso) return '-'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function fmtDate(iso){ if(!iso) return '-'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 
 // ── ISSUE SYSTEM ──
 var pendingFlagId = null;
@@ -1472,18 +1472,23 @@ async function confirmFlag(){
 }
 
 async function resolveIssue(id){
+  var now = new Date().toISOString();
+  // Update article
   var res = await sb.from('articles').update({
-    has_issue: true, issue_resolved: true
+    has_issue: true, issue_resolved: true,
+    issue_resolved_by: currentProfile.name,
+    issue_resolved_date: now
   }).eq('id', id);
   if(res.error){ showToast('Error: '+res.error.message); return; }
-  var now = new Date().toISOString();
-  await sb.from('comments').insert({
-    article_id: id, author: currentProfile.name,
-    text: '[PROBLEMA RESUELTO] Marcado como resuelto por '+currentProfile.name,
-    created_at: now
-  });
+  // Update the original report comment instead of creating a new one
+  await sb.from('comments')
+    .update({ resolved: true, resolved_by: currentProfile.name, resolved_at: now })
+    .eq('article_id', id)
+    .eq('is_report', true)
+    .eq('resolved', false);
   await loadArticles();
-  showToast('Problema marcado como resuelto');
+  await loadComments(id);
+  showToast('Problema resuelto');
   showArticle(id);
 }
 
@@ -1529,7 +1534,7 @@ function buildCommentsHtml(art){
           +' data-author="'+safeAuthor+'"'
           +' data-comment="'+safeText+'"'
           +' onclick="copyCommentContext(this)">&#128203; Copiar para IA</button>';
-        if(isAdmin() && !c.resolved){
+        if(isAdmin() && !c.resolved && !c.resolved_by){
           adminBtns = '<div class="comment-actions">'
             +copyBtn
             +'<button class="comment-btn resolve" onclick="resolveComment('+c.id+',\''+art.id+'\')">&#10003; Marcar resuelto</button>'
@@ -1537,9 +1542,13 @@ function buildCommentsHtml(art){
         } else if(!c.resolved){
           adminBtns = '<div class="comment-actions">'+copyBtn+'</div>';
         }
+        var resolvedInfo = (c.resolved && c.resolved_by)
+          ? '<div class="comment-meta" style="margin-top:4px;color:var(--green)">&#10003; Resuelto por <strong>'+c.resolved_by+'</strong> &middot; '+fmtDate(c.resolved_at)+'</div>'
+          : '';
         return '<div class="comment-item'+resolvedClass+'">'
-          +'<div class="comment-meta"><strong>'+(isFlag?'&#9888; ':'')+c.author+'</strong> &middot; '+fmtDate(c.created_at)+(c.resolved?' &middot; <span style="color:var(--green)">Resuelto</span>':'')+'</div>'
+          +'<div class="comment-meta"><strong>'+(isFlag?'&#9888; ':'')+c.author+'</strong> &middot; '+fmtDate(c.created_at)+'</div>'
           +'<div class="comment-text">'+c.text+'</div>'
+          +resolvedInfo
           +adminBtns
           +'</div>';
       }).join('')
@@ -1568,7 +1577,12 @@ function buildCommentsHtml(art){
 }
 
 async function resolveComment(commentId, articleId){
-  var res = await sb.from('comments').update({resolved: true}).eq('id', commentId);
+  var now = new Date().toISOString();
+  var res = await sb.from('comments').update({
+    resolved: true,
+    resolved_by: currentProfile.name,
+    resolved_at: now
+  }).eq('id', commentId);
   if(res.error){ showToast('Error: '+res.error.message); return; }
   await loadComments(articleId);
   showArticle(articleId);
