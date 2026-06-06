@@ -1664,10 +1664,14 @@ function renderInbox(){
       return;
     }
     container.innerHTML = inboxData.problems.map(function(a){
-      return '<div class="inbox-item has-issue" onclick="showArticle(\''+a.id+'\')">'  
+      return '<div class="inbox-item has-issue">'
         +'<div class="inbox-item-title"><span class="inbox-pill issue">&#9888; Problema</span> '+a.title+'</div>'
         +'<div class="inbox-item-meta">'+a.section+' &middot; Reportado por '+a.issue_by+' &middot; '+fmtDate(a.issue_date)+'</div>'
         +(a.issue_note ? '<div class="inbox-item-preview">'+a.issue_note+'</div>' : '')
+        +'<div class="comment-actions" style="margin-top:10px">'
+        +'<button class="comment-btn copy" onclick="inboxCopyAndEdit(\''+a.id+'\')" style="font-size:11px">&#128203; Copiar para IA y editar</button>'
+        +'<button class="comment-btn" onclick="showArticle(\''+a.id+'\')" style="font-size:11px">&#128065; Ver articulo</button>'
+        +'</div>'
         +'</div>';
     }).join('');
   } else {
