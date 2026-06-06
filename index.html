@@ -666,11 +666,17 @@ function renderHome(){
 }
 
 // ══ ARTICLE ══
-function showArticle(id){
+async function showArticle(id){
   var art = articlesCache.find(function(a){ return a.id===id; });
   if(!art){ showToast('Articulo no encontrado'); return; }
   currentArticleId = id;
+  if(isLoggedIn()) await loadComments(id);
   hideAll(); show('articleView'); setNav(null); window.scrollTo(0,0);
+
+  var issueBanner = '';
+  if(art.has_issue && !art.issue_resolved){
+    issueBanner = '<div class="issue-banner"><strong>&#9888; Articulo con informacion pendiente de actualizar</strong>Este articulo ha sido marcado por el equipo. Puede contener informacion desactualizada.</div>';
+  }
 
   var vbadge = art.verified
     ? '<span class="badge-verified">&#10003; Revisado por '+art.verified_by+' &middot; '+fmtDate(art.verified_date)+'</span>'
@@ -1198,12 +1204,7 @@ async function submitComment(articleId){
   showToast('Comentario enviado');
 }
 
-// Load comments when showing article
-var _origShowArticle = showArticle;
-showArticle = async function(id){
-  if(isLoggedIn()) await loadComments(id);
-  _origShowArticle(id);
-};
+// Comments load inline when article renders (async safe)
 
 // ── ACCOUNTING ──
 function showAccounting(){
@@ -1231,7 +1232,6 @@ function renderAccounting(){
     +'</div>';
 }
 
-// ── REPLACE showGlossary calls ──
 function showGlossary(){ showAccounting(); }
 
 
