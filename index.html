@@ -120,6 +120,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
 .comment-btn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--grey);font-family:IBM Plex Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;cursor:pointer;transition:border-color .15s,color .15s}
 .comment-btn:hover{border-color:var(--red);color:var(--white)}
 .comment-btn.resolve:hover{border-color:var(--green);color:var(--green)}
+.comment-btn.copy:hover{border-color:var(--blue);color:var(--blue)}
 .comment-submit:hover{background:var(--red-b)}
 
 
@@ -1218,6 +1219,37 @@ function clearSearch(){
 
 // ══ EXPORT MAP (admin only) ══
 
+
+function copyCommentContext(artId, artTitle, artSection, author, commentText){
+  var art = articlesCache.find(function(a){ return a.id===artId; });
+  if(!art){ showToast('Articulo no encontrado'); return; }
+
+  var plainBody = art.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+
+  var prompt = 'Eres el editor de contenido de La TribuWiki. Un revisor ha encontrado un problema en el siguiente articulo. Corrige SOLO lo que indica el comentario y devuelve el articulo completo en formato HTML listo para publicar, manteniendo la misma estructura.'
+    +'\n\n'
+    +'--- ARTICULO A CORREGIR ---'
+    +'\nTITULO: '+artTitle
+    +'\nSECCION: '+artSection
+    +'\nID: '+artId
+    +'\n\nCONTENIDO ACTUAL (HTML):\n'+art.body
+    +'\n\n--- COMENTARIO DEL REVISOR ---'
+    +'\nAutor: '+author
+    +'\nProblema: '+commentText
+    +'\n\n--- FIN ---'
+    +'\n\nDevuelveme SOLO el HTML corregido del body, sin explicaciones, listo para pegar en el editor de La TribuWiki. Mantén todos los hipervinculos existentes y el mismo formato.';
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(prompt).then(function(){
+      showToast('Copiado ✓ Pegalo en Claude');
+    }).catch(function(){
+      fallbackCopy(prompt);
+    });
+  } else {
+    fallbackCopy(prompt);
+  }
+}
+
 function copyPromptWithMap(){
   if(!isAdmin()){ showToast('Solo el admin puede usar esta funcion'); return; }
   if(!articlesCache.length){ showToast('Esperando articulos... intenta de nuevo'); loadArticles().then(copyPromptWithMap); return; }
@@ -1444,10 +1476,14 @@ function buildCommentsHtml(art){
         var isFlag = c.text.indexOf('[PROBLEMA') === 0 || c.text.indexOf('[RESUELTO') === 0;
         var resolvedClass = c.resolved ? ' comment-resolved' : '';
         var adminBtns = '';
+        var copyBtn = '<button class="comment-btn copy" onclick="copyCommentContext('+JSON.stringify(art.id)+','+JSON.stringify(art.title)+','+JSON.stringify(art.section)+','+JSON.stringify(c.author)+','+JSON.stringify(c.text)+')">&#128203; Copiar para IA</button>';
         if(isAdmin() && !c.resolved){
           adminBtns = '<div class="comment-actions">'
+            +copyBtn
             +'<button class="comment-btn resolve" onclick="resolveComment('+c.id+',\''+art.id+'\')">&#10003; Marcar resuelto</button>'
             +'</div>';
+        } else if(!c.resolved){
+          adminBtns = '<div class="comment-actions">'+copyBtn+'</div>';
         }
         return '<div class="comment-item'+resolvedClass+'">'
           +'<div class="comment-meta"><strong>'+(isFlag?'&#9888; ':'')+c.author+'</strong> &middot; '+fmtDate(c.created_at)+(c.resolved?' &middot; <span style="color:var(--green)">Resuelto</span>':'')+'</div>'
