@@ -1620,17 +1620,21 @@ async function loadInboxData(){
       .eq('issue_resolved', false)
       .order('issue_date', {ascending:false});
     inboxData.problems = issRes.error ? [] : (issRes.data || []);
+    console.log('Inbox problems:', inboxData.problems.length, issRes.error||'ok');
 
     // All unresolved comments — filter in JS to avoid Supabase NULL quirks
+    console.log('Fetching comments...');
     var comRes = await sb.from('comments')
       .select('id,article_id,author,text,created_at,resolved,is_report')
       .order('created_at', {ascending:false});
     var allComments = comRes.error ? [] : (comRes.data || []);
     // Keep only: not resolved AND not a report (is_report false or null)
+    console.log('All comments raw:', allComments.length, comRes.error||'ok');
     inboxData.comments = allComments.filter(function(c){
       return !c.resolved && !c.is_report;
     });
 
+    console.log('Inbox comments after filter:', inboxData.comments.length);
     updateBadge();
   } catch(e) {
     console.error('loadInboxData error:', e);
@@ -1665,6 +1669,7 @@ async function showInbox(){
 
 
 function renderInbox(){
+  console.log('renderInbox called, problems:', inboxData.problems.length, 'comments:', inboxData.comments.length);
   var container = document.getElementById('inboxContent');
   var countEl = document.getElementById('inboxCount');
   var total = inboxData.problems.length + inboxData.comments.length;
@@ -1868,13 +1873,14 @@ var myReportsCache = [];
 
 async function loadMyReports(){
   if(!sb || !currentProfile) return;
-  // Fetch all comments from this user and filter in JS (avoids NULL issues)
+  // Fetch all comments from this user
   var res = await sb.from('comments')
     .select('id,article_id,text,created_at,resolved,is_report,resolved_by,resolved_at')
-    .eq('author', currentProfile.name)
     .order('created_at', {ascending:false});
   // Keep only actual reports (is_report true), show all regardless of resolved status
+  console.log('myReports raw:', (res.data||[]).length, 'error:', res.error||'ok');
   myReportsCache = (res.data || []).filter(function(c){ return c.is_report === true; });
+  console.log('myReports after filter:', myReportsCache.length);
   var open = myReportsCache.filter(function(c){ return !c.resolved && !c.resolved_by; }).length;
   var badge = document.getElementById('menuMyReportsBadge');
   if(badge){
