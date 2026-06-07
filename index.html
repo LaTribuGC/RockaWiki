@@ -1613,7 +1613,7 @@ var inboxData = { problems: [], comments: [] };
 async function loadInboxData(){
   if(!sb || !isAdmin()) return;
   try {
-    // Load articles with open issues
+    // Problems: articles with open issues
     var issRes = await sb.from('articles')
       .select('id,title,section,has_issue,issue_resolved,issue_by,issue_date,issue_note')
       .eq('has_issue', true)
@@ -1621,19 +1621,20 @@ async function loadInboxData(){
       .order('issue_date', {ascending:false});
     inboxData.problems = issRes.error ? [] : (issRes.data || []);
 
-    // Load unresolved non-report comments (NULLs treated as false)
+    // All unresolved comments — filter in JS to avoid Supabase NULL quirks
     var comRes = await sb.from('comments')
       .select('id,article_id,author,text,created_at,resolved,is_report')
-      .or('resolved.eq.false,resolved.is.null')
-      .or('is_report.eq.false,is_report.is.null')
       .order('created_at', {ascending:false});
-    inboxData.comments = comRes.error ? [] : (comRes.data || []);
+    var allComments = comRes.error ? [] : (comRes.data || []);
+    // Keep only: not resolved AND not a report (is_report false or null)
+    inboxData.comments = allComments.filter(function(c){
+      return !c.resolved && !c.is_report;
+    });
 
     updateBadge();
   } catch(e) {
     console.error('loadInboxData error:', e);
-    inboxData.problems = [];
-    inboxData.comments = [];
+    inboxData.problems = []; inboxData.comments = [];
     updateBadge();
   }
 }
@@ -1643,16 +1644,14 @@ function updateBadge(){
   var badge = document.getElementById('avatarBadge');
   var menuBadge = document.getElementById('menuInboxBadge');
   var countEl = document.getElementById('inboxCount');
-  if(badge){
-    badge.className = 'avatar-badge' + (total > 0 ? ' active' : '');
-  }
+  if(badge) badge.className = 'avatar-badge' + (total > 0 ? ' active' : '');
   if(menuBadge){
     menuBadge.style.display = total > 0 ? 'inline' : 'none';
     menuBadge.textContent = total;
   }
-  if(countEl && total > 0){
-    countEl.textContent = total + ' pendiente' + (total !== 1 ? 's' : '');
-  }
+  if(countEl) countEl.textContent = total > 0
+    ? total + ' pendiente' + (total!==1?'s':'')
+    : 'Todo en orden';
 }
 
 async function showInbox(){
@@ -1869,14 +1868,14 @@ var myReportsCache = [];
 
 async function loadMyReports(){
   if(!sb || !currentProfile) return;
+  // Fetch all comments from this user and filter in JS (avoids NULL issues)
   var res = await sb.from('comments')
     .select('id,article_id,text,created_at,resolved,is_report,resolved_by,resolved_at')
     .eq('author', currentProfile.name)
-    .eq('is_report', true)
     .order('created_at', {ascending:false});
-  // Show ALL reports (resolved and pending) — never hide
-  myReportsCache = res.data || [];
-  var open = myReportsCache.filter(function(c){ return !c.resolved; }).length;
+  // Keep only actual reports (is_report true), show all regardless of resolved status
+  myReportsCache = (res.data || []).filter(function(c){ return c.is_report === true; });
+  var open = myReportsCache.filter(function(c){ return !c.resolved && !c.resolved_by; }).length;
   var badge = document.getElementById('menuMyReportsBadge');
   if(badge){
     badge.style.display = open > 0 ? 'inline' : 'none';
