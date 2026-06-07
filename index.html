@@ -810,6 +810,8 @@ async function showArticle(id){
   var issueBanner = '';
   if(art.has_issue && !art.issue_resolved){
     issueBanner = '<div class="issue-banner"><strong>&#9888; Articulo con informacion pendiente de actualizar</strong>Este articulo ha sido marcado por el equipo. Puede contener informacion desactualizada.</div>';
+  } else if(art.has_issue && art.issue_resolved){
+    issueBanner = '<div style="background:#0a2a15;border:1px solid var(--green);border-left:4px solid var(--green);border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--green)">&#10003; <strong>Problema resuelto</strong>'+(art.issue_resolved_by?' por '+art.issue_resolved_by:'')+(art.issue_resolved_date?' &middot; '+fmtDate(art.issue_resolved_date):'')+'</div>';
   }
 
   var vbadge = art.verified
@@ -1483,12 +1485,22 @@ async function resolveIssue(id){
     issue_resolved_date: now
   }).eq('id', id);
   if(res.error){ showToast('Error: '+res.error.message); return; }
-  // Update the original report comment instead of creating a new one
-  await sb.from('comments')
-    .update({ resolved: true, resolved_by: currentProfile.name, resolved_at: now })
+  // Update ALL report comments for this article (is_report true OR old [PROBLEMA REPORTADO] prefix)
+  // First get them, then update each - to handle old comments with is_report=false
+  var repCom = await sb.from('comments')
+    .select('id,is_report,text')
     .eq('article_id', id)
-    .eq('is_report', true)
     .eq('resolved', false);
+  if(repCom.data){
+    var toResolve = repCom.data.filter(function(c){
+      return c.is_report===true || (c.text&&c.text.indexOf('[PROBLEMA REPORTADO]')===0);
+    });
+    for(var i=0;i<toResolve.length;i++){
+      await sb.from('comments').update({
+        resolved: true, resolved_by: currentProfile.name, resolved_at: now
+      }).eq('id', toResolve[i].id);
+    }
+  }
   await loadArticles();
   await loadComments(id);
   if(isAdmin()) await loadInboxData();
