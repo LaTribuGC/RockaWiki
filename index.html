@@ -1558,7 +1558,7 @@ function buildCommentsHtml(art){
           +' data-author="'+safeAuthor+'"'
           +' data-comment="'+safeText+'"'
           +' onclick="copyCommentContext(this)">&#128203; Copiar para IA</button>';
-        if(isAdmin() && !c.resolved && !c.resolved_by){
+        if(isAdmin() && !c.resolved && !c.resolved_by && (isReport || !c.resolved)){
           adminBtns = '<div class="comment-actions">'
             +copyBtn
             +'<button class="comment-btn resolve" onclick="resolveComment('+c.id+',\''+art.id+'\')">&#10003; Marcar resuelto</button>'
@@ -1608,9 +1608,32 @@ async function resolveComment(commentId, articleId){
     resolved_at: now
   }).eq('id', commentId);
   if(res.error){ showToast('Error: '+res.error.message); return; }
+
+  // Check if ALL reports for this article are now resolved
+  var allCom = await sb.from('comments')
+    .select('id,is_report,text,resolved')
+    .eq('article_id', articleId);
+  if(allCom.data){
+    var pendingReports = allCom.data.filter(function(c){
+      var isRep = c.is_report===true || (c.text&&c.text.indexOf('[PROBLEMA REPORTADO]')===0);
+      return isRep && c.resolved!==true;
+    });
+    if(pendingReports.length === 0){
+      // All resolved — clear the issue flag on the article
+      await sb.from('articles').update({
+        has_issue: true,
+        issue_resolved: true,
+        issue_resolved_by: currentProfile.name,
+        issue_resolved_date: now
+      }).eq('id', articleId);
+    }
+  }
+
+  await loadArticles();
   await loadComments(articleId);
+  if(isAdmin()) await loadInboxData();
   showArticle(articleId);
-  showToast('Comentario marcado como resuelto');
+  showToast('Reporte resuelto');
 }
 
 async function submitComment(articleId){
