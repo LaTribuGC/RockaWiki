@@ -1619,6 +1619,49 @@ var inboxData = { pending: [], resolved: [], comments: [], problems: [] };
 
 // loadInboxData v1 removed
 
+async function loadInboxData(){
+  if(!sb || !currentProfile) return;
+  try {
+    var comRes = await sb.from('comments')
+      .select('id,article_id,author,text,created_at,resolved,is_report,resolved_by,resolved_at')
+      .order('created_at', {ascending:false});
+
+    if(comRes.error){
+      console.error('comments query error:', comRes.error);
+      inboxData.pending=[]; inboxData.resolved=[]; inboxData.comments=[];
+      updateBadge(); return;
+    }
+
+    var all = comRes.data || [];
+    console.log('Total comments fetched:', all.length);
+
+    function isRep(c){ return c.is_report===true || (c.text&&c.text.indexOf('[PROBLEMA REPORTADO]')===0); }
+    function isSys(c){ return c.text&&c.text.indexOf('[PROBLEMA RESUELTO]')===0; }
+    function isDone(c){ return c.resolved===true || (c.resolved_by&&c.resolved_by.length>0); }
+
+    var reports = all.filter(function(c){ return isRep(c) && !isSys(c); });
+    console.log('Reports found:', reports.length);
+
+    if(isAdmin()){
+      inboxData.pending  = reports.filter(function(c){ return !isDone(c); });
+      inboxData.resolved = reports.filter(function(c){ return  isDone(c); });
+      inboxData.comments = all.filter(function(c){ return !isRep(c)&&!isSys(c)&&!isDone(c); });
+    } else {
+      var mine = reports.filter(function(c){ return c.author===currentProfile.name; });
+      inboxData.pending  = mine.filter(function(c){ return !isDone(c); });
+      inboxData.resolved = mine.filter(function(c){ return  isDone(c); });
+      inboxData.comments = [];
+    }
+
+    console.log('Inbox — pending:',inboxData.pending.length,'resolved:',inboxData.resolved.length,'comments:',inboxData.comments.length);
+    updateBadge();
+  } catch(e){
+    console.error('loadInboxData exception:', e);
+    inboxData.pending=[]; inboxData.resolved=[]; inboxData.comments=[];
+    updateBadge();
+  }
+}
+
 function updateBadge(){
   var total = (inboxData.pending||[]).length + (inboxData.comments||[]).length;
   var badge = document.getElementById('avatarBadge');
