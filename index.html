@@ -1601,7 +1601,8 @@ async function submitComment(articleId){
   var now = new Date().toISOString();
   var res = await sb.from('comments').insert({
     article_id: articleId, author: currentProfile.name,
-    text: text, created_at: now
+    text: text, created_at: now,
+    author_email: currentProfile.email
   });
   if(res.error){ showToast('Error: '+res.error.message); return; }
   inp.value = '';
@@ -1623,7 +1624,7 @@ async function loadInboxData(){
   if(!sb || !currentProfile) return;
   try {
     var comRes = await sb.from('comments')
-      .select('id,article_id,author,text,created_at,resolved,is_report,resolved_by,resolved_at')
+      .select('id,article_id,author,author_email,text,created_at,resolved,is_report,resolved_by,resolved_at')
       .order('created_at', {ascending:false});
 
     if(comRes.error){
@@ -1647,7 +1648,14 @@ async function loadInboxData(){
       inboxData.resolved = reports.filter(function(c){ return  isDone(c); });
       inboxData.comments = all.filter(function(c){ return !isRep(c)&&!isSys(c)&&!isDone(c); });
     } else {
-      var mine = reports.filter(function(c){ return c.author===currentProfile.name; });
+      var myEmail = (currentProfile.email||'').toLowerCase().trim();
+      var myName  = (currentProfile.name||'').toLowerCase().trim();
+      var mine = reports.filter(function(c){
+        // Match by email (new comments) OR by name case-insensitive (old comments)
+        var emailMatch = c.author_email && c.author_email.toLowerCase().trim()===myEmail;
+        var nameMatch  = (c.author||'').toLowerCase().trim()===myName;
+        return emailMatch || nameMatch;
+      });
       inboxData.pending  = mine.filter(function(c){ return !isDone(c); });
       inboxData.resolved = mine.filter(function(c){ return  isDone(c); });
       inboxData.comments = [];
@@ -1897,7 +1905,8 @@ async function submitReport(artId){
   // Save comment with is_report flag
   var res = await sb.from('comments').insert({
     article_id: artId, author: currentProfile.name,
-    text: text, created_at: now, resolved: false, is_report: true
+    text: text, created_at: now, resolved: false, is_report: true,
+    author_email: currentProfile.email
   });
   if(res.error){ showToast('Error: '+res.error.message); return; }
   // Mark article as having issue
