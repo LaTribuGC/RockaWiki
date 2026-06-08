@@ -1563,7 +1563,7 @@ function buildCommentsHtml(art){
           +' data-author="'+safeAuthor+'"'
           +' data-comment="'+safeText+'"'
           +' onclick="copyCommentContext(this)">&#128203; Copiar para IA</button>';
-        if(isAdmin() && !c.resolved && !c.resolved_by && (isReport || !c.resolved)){
+        if(isAdmin() && !c.resolved && !c.resolved_by){
           adminBtns = '<div class="comment-actions">'
             +copyBtn
             +'<button class="comment-btn resolve" onclick="resolveComment('+c.id+',\''+art.id+'\')">&#10003; Marcar resuelto</button>'
