@@ -400,7 +400,7 @@ header{background:var(--bg2);border-bottom:2px solid var(--red);padding:0 16px;p
   <div class="stats-row">
     <div class="stat"><div class="num" id="statArticles">-</div><div class="lbl">Articulos</div></div>
     <div class="stat"><div class="num">6</div><div class="lbl">Secciones</div></div>
-    <div class="stat"><div class="num" id="statVerified">-</div><div class="lbl">Verificados</div></div>
+    <div class="stat" onclick="filterByVerified()" style="cursor:pointer" title="Ver articulos verificados"><div class="num" id="statVerified">-</div><div class="lbl">Verificados</div></div>
   </div>
   <div class="section-grid">
     <div class="section-card" onclick="filterSection('Apertura y Cierre')"><div class="sc-icon">&#128273;</div><div class="sc-title">Apertura &amp; Cierre</div><div class="sc-count" id="cnt0"></div></div>
@@ -751,6 +751,15 @@ function showHome(){
 function showIndex(){ hideAll(); show('indexView'); setNav('navIndex'); clearSearch(); renderIndex(); }
 function showGlossary(){ hideAll(); show('glossaryView'); setNav('navGloss'); clearSearch(); renderGlossary(); }
 function showImport(){ if(!isAdmin()){ showToast('Solo el admin puede importar'); return; } hideAll(); show('importView'); setNav(null); document.getElementById('importPreview').style.display='none'; }
+
+function filterByVerified(){
+  var arts = articlesCache.filter(function(a){ return a.verified; });
+  hideAll(); show('searchResults'); setNav(null);
+  document.getElementById('searchResults').innerHTML =
+    '<h2>VERIFICADOS: <span>'+arts.length+' articulos</span></h2>'
+    + arts.map(function(a){ return resultCard(a,''); }).join('')
+    + '<div class="spacer"></div>';
+}
 
 function filterSection(sec){
   document.getElementById('searchResults').style.display='none';
@@ -1250,10 +1259,12 @@ function onSearchInput(val){
   doSearch(val);
 }
 function clearSearch(){
-  document.getElementById('searchInput').value='';
-  document.getElementById('searchClear').style.display='none';
-  document.getElementById('searchResults').style.display='none';
-  hideAll(); show('homeView'); setNav('navHome'); renderHome();
+  var inp = document.getElementById('searchInput');
+  if(inp) inp.value='';
+  var clr = document.getElementById('searchClear');
+  if(clr) clr.style.display='none';
+  var sr = document.getElementById('searchResults');
+  if(sr) sr.style.display='none';
 }
 
 // ══ EXPORT MAP (admin only) ══
@@ -1621,7 +1632,9 @@ async function resolveComment(commentId, articleId){
   if(allCom.data){
     var pendingReports = allCom.data.filter(function(c){
       var isRep = c.is_report===true || (c.text&&c.text.indexOf('[PROBLEMA REPORTADO]')===0);
-      return isRep && c.resolved!==true;
+      // exclude system messages
+      var isSys = c.text&&c.text.indexOf('[PROBLEMA RESUELTO]')===0;
+      return !isSys && c.resolved!==true && c.id!==commentId;
     });
     if(pendingReports.length === 0){
       // All resolved — clear the issue flag on the article
@@ -1776,7 +1789,8 @@ function renderInbox(){
       btns += '<button class="comment-btn" onclick="showArticle(\''+c.article_id+'\')" style="font-size:11px">&#128065; Ver articulo</button>';
       btns += '</div>';
     }
-    return '<div class="inbox-item" style="border-left-color:'+(isResolved?'var(--green)':'var(--red-b)')+';'+(isResolved?'opacity:.7':'')+'">'
+    var cardClick = "onclick=\"showArticle('" + c.article_id + "')\"";
+    return '<div class="inbox-item" style="border-left-color:'+(isResolved?'var(--green)':'var(--red-b)')+';'+(isResolved?'opacity:.7;cursor:pointer':'cursor:pointer')+'" onclick="showArticle(\''+c.article_id+'\')">' 
       +'<div class="inbox-item-title">'+statusBadge+' <strong>'+artTitle+'</strong></div>'
       +'<div class="inbox-item-meta">'+artSection+' &middot; '+c.author+' &middot; '+fmtDate(c.created_at)+'</div>'
       +'<div class="inbox-item-preview">'+txt.slice(0,160)+(txt.length>160?'...':'')+'</div>'
