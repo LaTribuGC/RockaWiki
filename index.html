@@ -802,7 +802,12 @@ function renderHome(){
 // ══ ARTICLE ══
 async function showArticle(id){
   var art = articlesCache.find(function(a){ return a.id===id; });
-  if(!art){ showToast('Articulo no encontrado'); return; }
+  if(!art){
+    // Try reloading articles first
+    await loadArticles();
+    art = articlesCache.find(function(a){ return a.id===id; });
+    if(!art){ showToast('Articulo no encontrado'); return; }
+  }
   currentArticleId = id;
   if(isLoggedIn()) await loadComments(id);
   hideAll(); show('articleView'); setNav(null); window.scrollTo(0,0);
