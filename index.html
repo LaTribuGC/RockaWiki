@@ -984,20 +984,46 @@ async function saveArticle(){
 
 // ══ CSV IMPORT ══
 function parseCSV(text){
-  var lines = text.split('\n').map(function(l){return l.trim()}).filter(Boolean);
-  var header = lines[0].split(';').map(function(h){return h.trim()});
-  var rows = [];
-  for(var i=1;i<lines.length;i++){
-    var line = lines[i];
-    var cols = splitCSVLine(line);
-    if(cols.length < header.length) continue;
-    var row = {};
-    header.forEach(function(h,j){ row[h] = (cols[j]||'').replace(/^"|"$/g,'').trim(); });
+  var pos=0,len=text.length,header=null,rows=[];
+  function pF(){
+    if(pos>=len) return '';
+    if(text[pos]=='"'){
+      pos++; var v='';
+      while(pos<len){
+        if(text[pos]=='"'){
+          if(pos+1<len&&text[pos+1]=='"'){v+='"';pos+=2;}
+          else{pos++;break;}
+        } else v+=text[pos++];
+      }
+      return v;
+    } else {
+      var v='';
+      while(pos<len&&text[pos]!=';'&&text[pos]!='\n'&&text[pos]!='\r') v+=text[pos++];
+      return v.trim();
+    }
+  }
+  function pL(){
+    var cols=[];
+    while(pos<len){cols.push(pF());if(pos<len&&text[pos]==';')pos++;else break;}
+    if(pos<len&&text[pos]=='\r')pos++;
+    if(pos<len&&text[pos]=='\n')pos++;
+    return cols;
+  }
+  header=pL().map(function(h){return h.trim();});
+  while(pos<len){
+    if(text[pos]=='\n'||text[pos]=='\r'){pos++;continue;}
+    var cols=pL();
+    if(cols.length<2)continue;
+    var row={};
+    header.forEach(function(h,j){
+      var v=cols[j]||'';
+      if(h==='body')v=v.replace(/\\n/g,'\n');
+      row[h]=v;
+    });
     rows.push(row);
   }
   return rows;
 }
-
 function splitCSVLine(line){
   var cols = [];
   var cur = '';
