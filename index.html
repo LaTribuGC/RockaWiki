@@ -1017,7 +1017,7 @@ function parseCSV(text){
     var row={};
     header.forEach(function(h,j){
       var v=cols[j]||'';
-      if(h==='body')v=v.replace(/\\n/g,'\n');
+      if(h==='body')v=v.replace(/\\n/g,'');
       row[h]=v;
     });
     rows.push(row);
