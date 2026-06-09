@@ -1017,7 +1017,14 @@ function parseCSV(text){
     var row={};
     header.forEach(function(h,j){
       var v=cols[j]||'';
-      if(h==='body')v=v.replace(/\\n/g,'');
+      if(h==='body'){
+        // Remove literal \n (between tags and inside text)
+        v=v.replace(/\\n/g,' ');
+        // Clean up multiple spaces
+        v=v.replace(/ +/g,' ');
+        // Remove spaces between tags
+        v=v.replace(/> +</g,'><');
+      }
       row[h]=v;
     });
     rows.push(row);
@@ -1260,7 +1267,7 @@ function doSearch(q){
 }
 
 function resultCard(art,q){
-  var plain = art.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+  var plain = art.body.replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<[^>]+>/g,' ').replace(/\\n/g,' ').replace(/\s+/g,' ').trim();
   var excerpt = '';
   if(q){
     var idx = plain.toLowerCase().indexOf(q);
